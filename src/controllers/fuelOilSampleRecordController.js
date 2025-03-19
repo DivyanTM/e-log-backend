@@ -1,0 +1,42 @@
+import fuelOIlSampleRecordService  from "../services/fuelOIlSampleRecordService.js";
+
+async function createRecord(req,res){
+    try{
+        const data=req.body;
+
+
+        if(!data){
+            return res.status(400).send({message:"No Data To Insert"});
+        }
+
+        if(!data.date){
+            return res.status(400).send({message:"Date is required"});
+        }
+        if(!data.sampleSealNumber){
+            return res.status(400).send({message:"Sample Seal Number is required"});
+        }
+        if(data.letterOfProtestIssued===undefined){
+            return res.status(400).send({message:"Letter of Protest is required"});
+        }
+
+        data.createdBy=req.user.id;
+
+        let inserted=await fuelOIlSampleRecordService.createRecord(data);
+        if(!inserted){
+            return res.status(400).send({message:"data not created"});
+        }
+        return res.status(201).send({message:"Data created"});
+
+    }catch(err){
+        return res.status(500).send({message:err.message||"Data not created"});
+    }
+}
+async function getAllRecords(req,res){
+    try{
+        let records=await fuelOIlSampleRecordService.getAllRecords();
+        return res.status(200).send(records);
+    }catch(err){
+        return res.status(500).send({message:err.message||"internal server error"});
+    }
+}
+export default { createRecord,getAllRecords };
