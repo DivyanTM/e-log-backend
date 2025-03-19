@@ -1,8 +1,14 @@
 import express from 'express';
 import { connectToDB } from "./config/DBConfig.js";
+
+// routers
 import authRouter from "./routes/authRouter.js"
 import fosRouter from "./routes/fuelOilSampleRecordRouter.js"
+import fuelOilReceivedRecordRouter from "./routes/fuelOilReceivedRecordRouter.js";
+
 import cors from "cors";
+
+// middle wares
 import authMiddleware from "./middlewares/authMiddleware.js"
 
 const app = express();
@@ -35,5 +41,6 @@ connectToDB();
 
 app.use("/auth", authRouter);
 app.use('/fos',fosRouter);
+app.use('/for',fuelOilReceivedRecordRouter);
 
 export default app;

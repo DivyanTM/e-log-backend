@@ -20,8 +20,8 @@ async function createRecord(req,res){
         }
 
         data.createdBy=req.user.id;
-
-        let inserted=await fuelOIlSampleRecordService.createRecord(data);
+        let vesselID=req.user.vessel_id;
+        let inserted=await fuelOIlSampleRecordService.createRecord(data,vesselID);
         if(!inserted){
             return res.status(400).send({message:"data not created"});
         }
@@ -33,8 +33,9 @@ async function createRecord(req,res){
 }
 async function getAllRecords(req,res){
     try{
-        let records=await fuelOIlSampleRecordService.getAllRecords();
-        return res.status(200).send(records);
+        let vesselID=req.user.vessel_id;
+        let records=await fuelOIlSampleRecordService.getAllRecords(vesselID);
+        return res.status(200).send({records:records});
     }catch(err){
         return res.status(500).send({message:err.message||"internal server error"});
     }

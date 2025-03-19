@@ -1,8 +1,18 @@
 import { getPool } from "../config/DBConfig.js";
 
+let pool;
+
+(async () => {
+    try {
+        pool = await getPool();
+    } catch (err) {
+        console.error('Error while getting pool in equipment category controller', err);
+    }
+})();
+
 async function getUserByUsername(username) {
     try {
-        const pool = await getPool();
+
         const request = pool.request();
         request.input('username', username);
         const result = await request.query('SELECT * FROM tbl_user WHERE username = @username');

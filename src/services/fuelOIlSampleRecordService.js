@@ -1,10 +1,22 @@
 import { getPool } from "../config/DBConfig.js";
 import sql from "mssql";
 
-async function createRecord(data){
+
+let pool;
+
+
+(async () => {
+    try {
+        pool = await getPool();
+    } catch (err) {
+        console.error('Error while getting pool in equipment category controller', err);
+    }
+})();
+
+
+async function createRecord(data,vesselID){
     try{
-        console.log('service: ',data);
-        const pool = await getPool();
+        // console.log('service: ',data);
         const request = pool.request();
         request.input('bunkerDeliveryReferenceNumber',data.bunkerDeliveryNoteReferenceNumber);
         request.input('originOfSample',data.originOfSample);
@@ -14,8 +26,9 @@ async function createRecord(data){
         request.input('letterOfProtestCopyTo',data.letterOfProtestCopyTo);
         request.input('dateSampleDestroyed',data.dateSampleDestroyed);
         request.input('createdBy',data.createdBy);
+        request.input('vesselID',vesselID);
         const result=await request.query(`
-                                        insert into tbl_fuel_oil_sample_record (bunkerDeliveryNoteReferenceNumber,originOfSample,date,sampleSealNumber,letterOfProtestIssued,letterOfProtestCopyTo,dateSampleDestroyed,createdBy)
+                                        insert into tbl_fuel_oil_sample_record (bunkerDeliveryNoteReferenceNumber,originOfSample,date,sampleSealNumber,letterOfProtestIssued,letterOfProtestCopyTo,dateSampleDestroyed,createdBy,vesselID)
                                         values(
                                                @bunkerDeliveryReferenceNumber,
                                                @originOfSample,
@@ -24,7 +37,8 @@ async function createRecord(data){
                                                @letterOfProtestIssued,
                                                @letterOfProtestCopyTo,
                                                @dateSampleDestroyed,
-                                               @createdBy
+                                               @createdBy,
+                                               @vesselID
                                               );
                                         `);
 
@@ -33,16 +47,19 @@ async function createRecord(data){
         }
         return false;
     }catch(error){
+        console.log(error);
         throw new Error(`Database error: ${error.message}`);
     }
 }
 
 
 
-async function getAllRecords(){
+async function getAllRecords(vesselID){
     try{
-        const pool = await getPool();
+
         const request = pool.request();
+
+        request.input('vesselID',vesselID);
         const query=`
             select f.recordID,
                    f.bunkerDeliveryNoteReferenceNumber,
@@ -56,7 +73,8 @@ async function getAllRecords(){
                    f.approvalStatus,
                    u.fullname
             from tbl_fuel_oil_sample_record f
-                     left join tbl_user u on u.id=f.createdBy;
+                     left join tbl_user u on u.id=f.createdBy
+            where vesselID=@vesselID
                     
         
         `;
