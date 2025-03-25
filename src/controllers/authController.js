@@ -18,7 +18,7 @@ async function login(req, res) {
 
         res.header('Authorization', `Bearer ${token}`);
 
-        return res.status(200).json({ message: "Login Successful" });
+        return res.status(200).json({ message: "Login Successful",username: username});
 
     } catch (err) {
         if (err.message === "User not found") {

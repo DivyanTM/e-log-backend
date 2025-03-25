@@ -1,0 +1,27 @@
+create table tbl_garbage_record_book(
+    recordID int primary key identity(1,1),
+    occasion nvarchar(300) not null,
+    area nvarchar(200) not null,
+    date date not null,
+    time time not null,
+    position nvarchar(max) not null,
+    methodOfDisposal nvarchar(255) not null,
+    plastics decimal(10,5),
+    foodWaste decimal(10,5),
+    domesticWaste decimal(10,5),
+    cookingOil decimal(10,5),
+    incineratorAsh decimal(10,5),
+    operationalWaste decimal(10,5),
+    animalCarcasses decimal(10,5),
+    fishingGear decimal(10,5),
+    eWaste decimal(10,5),
+    remarks nvarchar,
+    createdAt datetime not null default getdate(),
+    approvedBy int,
+    approvalStatus int not null default 1,
+    createdBy int not null,
+    vesselID int not null,
+
+    foreign key(createdBy) references tbl_user(id),
+    foreign key(vesselID) references tbl_ship(id)
+);
