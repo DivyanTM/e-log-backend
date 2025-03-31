@@ -1,0 +1,171 @@
+tbl_orb1_accidentalDischarges                                                                                                     
+tbl_orb1_additionalOperationsRemarks                                                                                              
+tbl_orb1_baCl_formEntries                                                                                                         
+tbl_orb1_baCl_TankCleaningDetails                                                                                                 
+tbl_orb1_baCl_TankIdentity                                                                                                        
+tbl_orb1_bilgeWaterTransfer                                                                                                       
+tbl_orb1_bunkeringDetails                                                                                                         
+tbl_orb1_bunkeringFuelOilDetails                                                                                                  
+tbl_orb1_bunkeringLubOilDetails                                                                                                   
+tbl_orb1_colTranDis_DischargeMethods                                                                                              
+tbl_orb1_colTranDis_formEntries                                                                                                   
+tbl_orb1_colTranDis_TankDetails                                                                                                   
+tbl_orb1_disBallWater_formEntries                                                                                                 
+tbl_orb1_disBallWater_TankIdentity                                                                                                
+tbl_orb1_main                                                                                                                     
+tbl_orb1_nonAutoDis_formEntries                                                                                                   
+tbl_orb1_nonAutoDis_Methods                                                                                                       
+tbl_orb1_nonAutoDis_TankIdentity                                                                                                  
+tbl_orb1_sysdiagrams                                                                                                              
+tbl_orb1_systemFailureDetails     
+
+CREATE TABLE [dbo].[tbl_orb1_accidentalDischarges](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [occurrenceTime] [datetime] NULL,
+ [latitude] [nvarchar](50) NULL,
+ [longitude] [nvarchar](50) NULL,
+ [oilQuantity] [decimal](10, 2) NULL,
+ [oilType] [nvarchar](255) NULL,
+ [dischargeCircumstances] [nvarchar](500) NULL,
+ [actionsTaken] [nvarchar](500) NULL,
+ [remarks] [nvarchar](500) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_additionalOperationsRemarks](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [remarkDate] [date] NULL,
+ [remarkTime] [time](7) NULL,
+ [remarks] [nvarchar](500) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_baCl_formEntries](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [cleanedSinceOil] [bit] NULL,
+ [latitudeStart] [nvarchar](50) NULL,
+ [longitudeStart] [nvarchar](50) NULL,
+ [timeStartUtc] [datetime2](7) NULL,
+ [latitudeCompletion] [nvarchar](50) NULL,
+ [longitudeCompletion] [nvarchar](50) NULL,
+ [timeCompletionUtc] [datetime2](7) NULL,
+ [latitudeBallastStart] [nvarchar](50) NULL,
+ [longitudeBallastStart] [nvarchar](50) NULL,
+ [timeBallastStartUtc] [datetime2](7) NULL,
+ [latitudeBallastEnd] [nvarchar](50) NULL,
+ [longitudeBallastEnd] [nvarchar](50) NULL,
+ [timeBallastEndUtc] [datetime2](7) NULL,
+ [ballastQuantity] [decimal](10, 2) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_baCl_TankCleaningDetails](
+ [formId] [int] NULL,
+ [cleaningWaterTransfer] [bit] NULL,
+ [cleaningMethod] [nvarchar](255) NULL,
+ [chemicalsUsed] [decimal](10, 2) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_baCl_TankIdentity](
+ [formId] [int] NULL,
+ [tankName] [nvarchar](255) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_bilgeWaterTransfer](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [time] [datetime] NULL,
+ [latitude] [nvarchar](50) NULL,
+ [longitude] [nvarchar](50) NULL,
+ [systemManualModeTime] [datetime] NULL
+
+CREATE TABLE [dbo].[tbl_orb1_bunkeringDetails](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [placeOfBunkering] [nvarchar](255) NULL,
+ [timeOfBunkering] [datetime] NULL
+
+CREATE TABLE [dbo].[tbl_orb1_bunkeringFuelOilDetails](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [formId] [int] NULL,
+ [fuelOilType] [nvarchar](255) NULL,
+ [quantityAdded] [decimal](10, 2) NULL,
+ [totalContent] [decimal](10, 2) NULL,
+ [tankIdentity] [nvarchar](255) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_bunkeringLubOilDetails](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [formId] [int] NULL,
+ [lubOilType] [nvarchar](255) NULL,
+ [quantityAdded] [decimal](10, 2) NULL,
+ [totalContent] [decimal](10, 2) NULL,
+ [tankIdentity] [nvarchar](255) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_colTranDis_DischargeMethods](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [formId] [int] NULL,
+ [method] [nvarchar](255) NULL,
+ [quantity] [decimal](10, 2) NULL,
+ [tanksEmptied] [nvarchar](255) NULL,
+ [quantityRetained] [decimal](10, 2) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_colTranDis_formEntries](
+ [operationID] [int] IDENTITY(1,1) NOT NULL
+
+CREATE TABLE [dbo].[tbl_orb1_colTranDis_TankDetails](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [formId] [int] NULL,
+ [tankName] [nvarchar](255) NULL,
+ [tankCapacity] [decimal](10, 2) NULL,
+ [totalQuantityRetained] [decimal](10, 2) NULL,
+ [quantityCollectedManually] [decimal](10, 2) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_disBallWater_formEntries](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [positionStartLatitude] [nvarchar](50) NULL,
+ [positionCompletionLatitude] [nvarchar](50) NULL,
+ [shipSpeedDuringDischarge] [decimal](5, 2) NULL,
+ [dischargeMethod] [nvarchar](255) NULL,
+ [quantityDischarged] [decimal](10, 2) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_disBallWater_TankIdentity](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [formId] [int] NULL,
+ [tankName] [nvarchar](255) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_main](
+ [recordID] [int] IDENTITY(1,1) NOT NULL,
+ [createdAt] [datetime] NULL,
+ [approvedBy] [int] NULL,
+ [approvedStatus] [int] NULL,
+ [createdBy] [int] NULL,
+ [vesselID] [int] NULL,
+ [baCl_formEntries_operationID] [int] NULL,
+ [disBallWater_formEntries_operationID] [int] NULL,
+ [colTranDis_formEntries_operationID] [int] NULL,
+ [nonAutoDis_formEntries_operationID] [int] NULL,
+ [bilgeWaterTransfer_operationID] [int] NULL,
+ [systemFailureDetails_operationID] [int] NULL,
+ [accidentalDischarges_operationID] [int] NULL,
+ [bunkeringDetails_operationID] [int] NULL,
+ [additionalOperationsRemarks_operationID] [int] NULL
+
+CREATE TABLE [dbo].[tbl_orb1_nonAutoDis_formEntries](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [capacityOfTanks] [decimal](10, 2) NULL,
+ [totalQuantityRetention] [decimal](10, 2) NULL,
+ [residueCollectedManual] [decimal](10, 2) NULL,
+ [transferOrDisposalMethod] [nvarchar](255) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_nonAutoDis_Methods](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [formId] [int] NULL,
+ [method] [nvarchar](255) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_nonAutoDis_TankIdentity](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [formId] [int] NULL,
+ [tankName] [nvarchar](255) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_sysdiagrams](
+ [name] [sysname] NOT NULL,
+ [principal_id] [int] NOT NULL,
+ [diagram_id] [int] IDENTITY(1,1) NOT NULL,
+ [version] [int] NULL,
+ [definition] [varbinary](max) NULL
+
+CREATE TABLE [dbo].[tbl_orb1_systemFailureDetails](
+ [operationID] [int] IDENTITY(1,1) NOT NULL,
+ [systemFailureTime] [datetime] NULL,
+ [systemOperationalTime] [datetime] NULL,
+ [failureReason] [nvarchar](500) NULL

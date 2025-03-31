@@ -1,0 +1,149 @@
+tbl_crb_accidentalDischarge_formEntries                                                                                           
+tbl_crb_additionalProcedures_formEntries                                                                                          
+tbl_crb_ballastingCargoTanks_formEntries                                                                                          
+tbl_crb_cargoPrewash_formEntries                                                                                                  
+tbl_crb_cargoRecord                                                                                                               
+tbl_crb_cleaningCargoTanks_formEntries                                                                                            
+tbl_crb_controlSurveyors_formEntries                                                                                              
+tbl_crb_dischargeBallastWater_formEntries                                                                                         
+tbl_crb_dischargeSea_formEntries                                                                                                  
+tbl_crb_internalTransfer_formEntries                                                                                              
+tbl_crb_loadingCargo_details                                                                                                      
+tbl_crb_loadingCargo_formEntries                                                                                                  
+tbl_crb_sysdiagrams                                                                                                               
+tbl_crb_unloadingCargo_formEntries 
+
+CREATE TABLE [dbo].[tbl_crb_accidentalDischarge_formEntries](
+ [operationID] [int] NOT NULL,
+ [occurrenceTime] [datetime] NULL,
+ [quantity] [decimal](10, 2) NULL,
+ [substance] [nvarchar](255) NULL,
+ [category] [nvarchar](255) NULL,
+ [circumstances] [text] NULL,
+ [remarks] [text] NULL
+
+CREATE TABLE [dbo].[tbl_crb_additionalProcedures_formEntries](
+ [operationID] [int] NOT NULL,
+ [recordDate] [datetime] NULL,
+ [recordTime] [datetime] NULL,
+ [remarks] [text] NULL
+
+CREATE TABLE [dbo].[tbl_crb_ballastingCargoTanks_formEntries](
+ [operationID] [int] NOT NULL,
+ [tankIdentity] [nvarchar](255) NULL,
+ [startTime] [datetime] NULL
+
+CREATE TABLE [dbo].[tbl_crb_cargoPrewash_formEntries](
+ [operationID] [int] NOT NULL,
+ [tankDetails] [text] NULL,
+ [numCleaningMachines] [int] NULL,
+ [washDuration] [int] NULL,
+ [washType] [nvarchar](100) NULL,
+ [unloadingPortFacility] [nvarchar](255) NULL,
+ [otherFacility] [nvarchar](255) NULL,
+ [tankWashingsTransferred] [decimal](10, 2) NULL,
+ [transferDateTime] [datetime] NULL
+
+CREATE TABLE [dbo].[tbl_crb_cargoRecord](
+ [recordID] [int] IDENTITY(1,1) NOT NULL,
+ [createdAt] [datetime] NULL,
+ [approvedBy] [int] NULL,
+ [approvedStatus] [int] NULL,
+ [createdBy] [int] NULL,
+ [vesselID] [int] NULL,
+ [loadingCargo_ID] [int] NULL,
+ [ballastingCargoTanks_ID] [int] NULL,
+ [additionalProcedures_ID] [int] NULL,
+ [internalTransfer_ID] [int] NULL,
+ [dischargeSea_ID] [int] NULL,
+ [cargoPrewash_ID] [int] NULL,
+ [controlSurveyors_ID] [int] NULL,
+ [accidentalDischarge_ID] [int] NULL,
+ [dischargeBallastWater_ID] [int] NULL,
+ [unloadingCargo_ID] [int] NULL,
+ [cleaningCargoTanks_ID] [int] NULL
+
+CREATE TABLE [dbo].[tbl_crb_cleaningCargoTanks_formEntries](
+ [operationID] [int] NOT NULL,
+ [cleaningTime] [datetime] NULL,
+ [tankDetails] [text] NULL,
+ [washingProcedure] [nvarchar](255) NULL,
+ [cleaningAgent] [nvarchar](255) NULL,
+ [cleaningAgentQuantity] [decimal](10, 2) NULL,
+ [numFansUsed] [int] NULL,
+ [ventilationDuration] [int] NULL,
+ [intoSea] [bit] NULL,
+ [receptionFacility] [nvarchar](255) NULL,
+ [slopTank] [nvarchar](255) NULL,
+ [tankWashingsTransferred] [decimal](10, 2) NULL,
+ [transferDateTime] [datetime] NULL
+
+CREATE TABLE [dbo].[tbl_crb_controlSurveyors_formEntries](
+ [operationID] [int] NOT NULL,
+ [port] [nvarchar](255) NULL,
+ [tankDetails] [text] NULL,
+ [substances] [text] NULL,
+ [categories] [text] NULL,
+ [tanksEmptied] [bit] NULL,
+ [prewashDone] [bit] NULL,
+ [tankWashingsDischarged] [bit] NULL,
+ [exemptionGranted] [bit] NULL,
+ [exemptionReason] [text] NULL,
+ [surveyorName] [nvarchar](255) NULL,
+ [surveyorSignature] [nvarchar](255) NULL,
+ [organization] [nvarchar](255) NULL
+
+CREATE TABLE [dbo].[tbl_crb_dischargeBallastWater_formEntries](
+ [operationID] [int] NOT NULL,
+ [tankIdentity] [nvarchar](255) NULL,
+ [dischargeMethod] [nvarchar](255) NULL,
+ [receptionFacility] [nvarchar](255) NULL,
+ [startTime] [datetime] NULL,
+ [stopTime] [datetime] NULL,
+ [shipSpeed] [decimal](5, 2) NULL
+
+CREATE TABLE [dbo].[tbl_crb_dischargeSea_formEntries](
+ [operationID] [int] NOT NULL,
+ [tankDetails] [text] NULL,
+ [wereWashingsDischarged] [bit] NULL,
+ [dischargeRate] [decimal](10, 2) NULL,
+ [quantityDischarged] [decimal](10, 2) NULL,
+ [startTime] [datetime] NULL,
+ [stopTime] [datetime] NULL,
+ [shipSpeed] [decimal](5, 2) NULL
+
+CREATE TABLE [dbo].[tbl_crb_internalTransfer_formEntries](
+ [operationID] [int] NOT NULL,
+ [nameOfCargo] [nvarchar](255) NULL,
+ [categoryOfCargo] [nvarchar](50) NULL,
+ [tankFrom] [nvarchar](50) NULL,
+ [tankTo] [nvarchar](50) NULL,
+ [wasTankEmptied] [bit] NULL
+
+CREATE TABLE [dbo].[tbl_crb_loadingCargo_details](
+ [formID] [int] NULL,
+ [tankIdentity] [nvarchar](50) NULL,
+ [nameOfSubstance] [nvarchar](255) NULL,
+ [category] [nvarchar](50) NULL
+
+CREATE TABLE [dbo].[tbl_crb_loadingCargo_formEntries](
+ [operationID] [int] NOT NULL,
+ [placeOfLoading] [nvarchar](255) NULL
+
+CREATE TABLE [dbo].[tbl_crb_sysdiagrams](
+ [name] [sysname] NOT NULL,
+ [principal_id] [int] NOT NULL,
+ [diagram_id] [int] IDENTITY(1,1) NOT NULL,
+ [version] [int] NULL,
+ [definition] [varbinary](max) NULL
+
+CREATE TABLE [dbo].[tbl_crb_unloadingCargo_formEntries](
+ [operationID] [int] NOT NULL,
+ [placeOfUnloading] [nvarchar](255) NULL,
+ [tanksUnloaded] [nvarchar](255) NULL,
+ [wasTankEmptied] [bit] NULL,
+ [prewashRequired] [bit] NULL,
+ [failureTime] [nvarchar](50) NULL,
+ [failureReason] [text] NULL,
+ [operationalTime] [nvarchar](50) NULL
+
