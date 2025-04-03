@@ -42,10 +42,11 @@ async function createRecord(data,vesselID){
                                               );
                                         `);
 
-        if (result.rowsAffected && result.rowsAffected[0] > 0) {
+        if (!(result.rowsAffected && result.rowsAffected[0] > 0)) {
+            return false;
+        } else {
             return true;
         }
-        return false;
     }catch(error){
         console.log(error);
         throw new Error(`Database error: ${error.message}`);
@@ -73,7 +74,7 @@ async function getAllRecords(vesselID){
                    f.approvalStatus,
                    u.fullname
             from tbl_fuel_oil_sample_record f
-                     left join tbl_user u on u.id=f.createdBy
+                     left join tbl_user u on u.user_id=f.createdBy
             where vesselID=@vesselID
                     
         

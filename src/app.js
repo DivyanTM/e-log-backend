@@ -5,6 +5,12 @@ import { connectToDB } from "./config/DBConfig.js";
 import authRouter from "./routes/authRouter.js"
 import fosRouter from "./routes/fuelOilSampleRecordRouter.js"
 import fuelOilReceivedRecordRouter from "./routes/fuelOilReceivedRecordRouter.js";
+import grbRouter from "./routes/GRBrouter.js";
+import NOXRouter from "./routes/NOXRouter.js";
+import LSFORouter from "./routes/LSFORouter.js"
+import bwrRouter from "./routes/bwrRouter.js"
+import crbRouter from "./routes/crbRouter.js"
+import orb1Router from "./routes/orb1Router.js"
 
 import cors from "cors";
 
@@ -42,5 +48,11 @@ connectToDB();
 app.use("/auth", authRouter);
 app.use('/fos',fosRouter);
 app.use('/for',fuelOilReceivedRecordRouter);
+app.use('/grb',grbRouter);
+app.use('/nox',NOXRouter);
+app.use('/lsfo',LSFORouter);
+app.use('/bwr',bwrRouter);
+app.use('/crb',crbRouter);
+app.use('/orb1',orb1Router);
 
 export default app;

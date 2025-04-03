@@ -1,18 +1,21 @@
 import sql from "mssql";
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config(); // Adjust if needed
 
 const config = {
     server: process.env.DATABASE_SERVER,
     database: process.env.DATABASE,
     user: process.env.DATABASE_USER,
     password: process.env.DATABASE_PASSWORD,
-    port: parseInt(process.env.DB_PORT, 10),
     options: {
         encrypt: true,
-        trustServerCertificate: true
-    }
+        trustServerCertificate: true,
+        trustedConnection: false,
+        enableArithAbort: true,
+    },
+    port: parseInt(process.env.DB_PORT, 10),
+
 };
 
 let poolPromise;
