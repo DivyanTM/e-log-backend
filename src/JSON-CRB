@@ -1,0 +1,143 @@
+
+//tbl_crb_accidentalDischarge_formEntries
+{
+    "operationType": 1,
+    "operationData": {
+        "occurrenceTime": "2024-04-10T08:15:00Z",
+        "quantity": 125.75,
+        "substance": "Heavy Fuel Oil",
+        "category": "Category X",
+        "circumstances": "Hull fracture during heavy weather",
+        "estimatedDischargedVolume": 23,
+        "remarks": "Containment booms deployed, port authorities notified",
+        "conformBWMPlan": true
+    }
+}
+//tbl_crb_additionalProcedures_formEntries
+{
+    "operationType": 2,
+    "operationData": {
+        "tankDetails": "Tank 2C - Previous Cargo: Crude Oil",
+        "wereWashingsDischarged": true,
+        "dischargeRate": 125.75,
+        "quantityDischarged": 850.50,
+        "startTime": "2024-03-25T09:30:00Z",
+        "stopTime": "2024-03-25T12:45:00Z",
+        "shipSpeed": 10.2
+    }
+}
+//tbl_crb_ballastingCargoTanks_formEntries
+{
+    "operationType": 3,
+    "operationData": {
+        "tankIdentity": "WBT-2-S",
+        "startTime": "2024-01-16T14:15:00Z"
+    }
+}
+//tbl_crb_cargoPrewash_formEntries
+{
+    "operationType": 4,
+    "operationData": {
+        "tankDetails": "Tank 5S - Previous Cargo: Crude Oil",
+        "numCleaningMachines": 3,
+        "washDuration": 120,
+        "washType": "hotWater",
+        "unloadingPortFacility": "Port of Rotterdam",
+        "otherFacility": null,
+        "tankWashingsTransferred": 45.75,
+        "transferDateTime": "2024-02-10T14:30:00Z"
+    }
+}
+//tbl_crb_cleaningCargoTanks_formEntries
+{
+    "operationType": 5,
+    "operationData": {
+        "cleaningTime": "2024-03-05T10:15:00Z",
+        "tankDetails": "Tank 3P - Previous Cargo: Heavy Fuel Oil",
+        "washingProcedure": "Three-stage prewash",
+        "cleaningAgent": "MARPOL-approved solvent",
+        "cleaningAgentQuantity": 125.5,
+        "numFansUsed": 4,
+        "ventilationDuration": 180,
+        "intoSea": false,
+        "receptionFacility": "Port of Singapore",
+        "slopTank": "SLOP-TK-1",
+        "tankWashingsTransferred": 85.25,
+        "transferDateTime": "2024-03-05T14:30:00Z"
+    }
+}
+
+//tbl_crb_controlSurveyors_formEntries
+{
+    "operationType": 6,
+    "operationData": {
+        "port": "Port of Rotterdam",
+        "tankDetails": "Tank 4S - Previous Cargo: Xylene",
+        "substances": "Category X",
+        "categories": "A, B",
+        "tanksEmptied": true,
+        "prewashDone": true,
+        "tankWashingsDischarged": false,
+        "exemptionGranted": false,
+        "exemptionReason": null,
+        "surveyorName": "John Smith",
+        "surveyorSignature": "jsmith_20240315",
+        "organization": "Lloyd's Register"
+    }
+}
+/tbl_crb_dischargeBallastWater_formEntries
+{
+    "operationType": 7,
+    "operationData": {
+        "tankIdentity": "BWT-3-P",
+        "dischargeMethod": "Pump",
+        "receptionFacility": "Port of Los Angeles Ballast Facility",
+        "startTime": "2024-03-20T08:15:00Z",
+        "stopTime": "2024-03-20T10:30:00Z",
+        "shipSpeed": 12.5
+    }
+}
+//tbl_crb_dischargeSea_formEntries
+{
+    "operationType": 8,
+    "operationData": {
+        "nameOfCargo": "Heavy Fuel Oil",
+        "categoryOfCargo": "Category Y",
+        "tankFrom": "Tank-5-P",
+        "tankTo": "Tank-3-S",
+        "wasTankEmptied": true
+    }
+}
+//tbl_crb_internalTransfer_formEntries
+{
+    "operationType": 9,
+    "operationData": {
+        "remarks": "Conducted monthly oil record book verification - no discrepancies found"
+    }
+}
+//tbl_crb_unloadingCargo_formEntries
+{
+    "operationType": 10,
+    "operationData": {
+        "placeOfUnloading": "Port of Singapore",
+        "tanksUnloaded": "Tank-1-S, Tank-2-P",
+        "wasTankEmptied": true,
+        "prewashRequired": true,
+        "failureTime": null,
+        "failureReason": null,
+        "operationalTime": null
+    }
+}
+
+//tbl_crb_loadingCargo_formEntries
+{
+    "operationType": 11,
+    "operationData": {
+        "placeOfLoading": "Port of Singapore",
+        "tankIdentity": "BWT-3-P",
+        "nameOfSubstance": "ANRTHING",
+        "category": true
+    }
+}
+
+
