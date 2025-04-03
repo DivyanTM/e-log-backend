@@ -14,12 +14,12 @@ async function createRecord(req,res){
         }
         if(!data.sampleSealNumber){
             return res.status(400).send({message:"Sample Seal Number is required"});
-        }   
+        }
         if(data.letterOfProtestIssued===undefined){
             return res.status(400).send({message:"Letter of Protest is required"});
         }
 
-        data.createdBy=req.user.user_id;
+        data.createdBy=req.user.id;
         let vesselID=req.user.vessel_id;
         let inserted=await fuelOIlSampleRecordService.createRecord(data,vesselID);
         if(!inserted){
@@ -28,7 +28,6 @@ async function createRecord(req,res){
         return res.status(201).send({message:"Data created"});
 
     }catch(err){
-        console.log(err);
         return res.status(500).send({message:err.message||"Data not created"});
     }
 }
@@ -38,7 +37,6 @@ async function getAllRecords(req,res){
         let records=await fuelOIlSampleRecordService.getAllRecords(vesselID);
         return res.status(200).send({records:records});
     }catch(err){
-        console.log(err);
         return res.status(500).send({message:err.message||"internal server error"});
     }
 }
