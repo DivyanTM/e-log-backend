@@ -5,5 +5,6 @@ import fuelOilSampleRecordController from "../controllers/fuelOilSampleRecordCon
 
 fosRouter.post("/", fuelOilSampleRecordController.createRecord);
 fosRouter.get("/all",fuelOilSampleRecordController.getAllRecords);
+fosRouter.post("/verify",fuelOilSampleRecordController.updateRecordVerificationStatus);
 
 export default fosRouter;
