@@ -1,0 +1,26 @@
+# Node modules
+node_modules/
+
+# Environment variables / Secrets
+.env
+.env.local
+.env.production
+.env.development
+.env.*      # If you have multiple .env files like .env.test
+
+# Database credentials or secrets
+config/keys.js
+config/database.js
+secrets/
+certs/
+*.pem
+*.key
+
+# Logs
+logs/
+*.log
+
+# OS / IDE files
+.DS_Store
+.vscode/
+.idea/

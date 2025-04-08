@@ -26,6 +26,7 @@ async function login(req, res) {
         } else if (err.message === "Invalid password") {
             return res.status(401).json({ message: err.message });
         }
+        console.log("Error : ",err.message);
         return res.status(500).json({ message: "Internal Server Error", error: err.message });
     }
 }

@@ -7,7 +7,9 @@ import fosRouter from "./routes/fuelOilSampleRecordRouter.js"
 import fuelOilReceivedRecordRouter from "./routes/fuelOilReceivedRecordRouter.js";
 import grbRouter from "./routes/GRBrouter.js";
 import NOXRouter from "./routes/NOXRouter.js";
-
+import bunkerdeliverynoterecordRouter from "./routes/bunkerdeliverynoterecordRouter.js";
+import ODSRecordRouter from "./routes/ODSRecordRouter.js";
+import orb2Router from "./routes/orb2Router.js";
 import cors from "cors";
 
 // middle wares
@@ -46,5 +48,8 @@ app.use('/fos',fosRouter);
 app.use('/for',fuelOilReceivedRecordRouter);
 app.use('/grb',grbRouter);
 app.use('/nox',NOXRouter);
+app.use('/bdn',bunkerdeliverynoterecordRouter);
+app.use('/ods',ODSRecordRouter);
+app.use('/orb2',orb2Router);
 
 export default app;
