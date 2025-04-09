@@ -175,15 +175,13 @@ async function createRecord3(data, vesselID) {
 async function createRecord4(data, vesselID) {
     const pool = await getPool();
     try {
-        if (missingFields.length === 0) {
 
             const formResult = await pool.request()
                 .input("tankIdentity", data.tankIdentity)
                 .input("tankCapacity", parseFloat(data.tankCapacity))
                 .input("totalQuantityRetention", parseFloat(data.totalQuantityRetention))
-                .input("quantityResidueCollectedManually",
-                    data.quantityResidueCollectedManually !== undefined ? parseFloat(data.quantityResidueCollectedManually) : null)
-                .input("methodsTransferDisposal", data.methodsTransferDisposal)
+                .input("quantityResidueCollectedManually",data.quantityResidueCollectedManually)
+                .input("methodsTransferDisposal",data.methodsTransferDisposal)
                 .query(`
                 INSERT INTO [db_owner].[tbl_orb1_NonAutoBilgeWater] (
                     tankIdentity, tankCapacity, totalQuantityRetention,
@@ -212,7 +210,7 @@ async function createRecord4(data, vesselID) {
             `);
 
             return { success: true, operationID };
-        }
+        
     } catch (err) {
         console.error("Ballast Water Discharge Facility Service Error:", err.message);
         throw err;

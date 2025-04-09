@@ -99,7 +99,7 @@ async function createRecord3(data, vesselID) {
             .input("remainingVolume", parseFloat(data.remainingVolume) || 0)
             .input("conformBWMPlan", data.conformBWMPlan ? 1 : 0) // Ensuring BIT type (1 for true, 0 for false)
             .query(`
-        INSERT INTO tbl_bwr_ballastWaterDischargeFacility_formEntries 
+        INSERT INTO tbl_bwr_ballastWaterDischargeSea_formEntries 
             (recordDate, recordTime, position, estimatedDischargedVolume, remainingVolume, conformBWMPlan)
         OUTPUT inserted.operationID
         VALUES 
@@ -174,8 +174,8 @@ async function createRecord5(data, vesselID) {
             .input("recordDate", data.recordDate)
             .input("recordTime", data.recordTime)
             .input("position", data.position)
-            .input("waterDepth", parseFloat(data.waterDepth) || 0)  // Ensuring decimal(5,2)
-            .input("estimatedUptakeVolume", parseFloat(data.estimatedUptakeVolume) || 0) // Ensuring decimal(10,2)
+            .input("waterDepth", parseFloat(data.waterDepth))  // Ensuring decimal(5,2)
+            .input("estimatedUptakeVolume", parseFloat(data.estimatedUptakeVolume)) // Ensuring decimal(10,2)
             .query(`
             INSERT INTO tbl_bwr_ballastWaterUptake_formEntries 
                 (recordDate, recordTime, position, waterDepth, estimatedUptakeVolume)
@@ -194,7 +194,7 @@ async function createRecord5(data, vesselID) {
             .input("approvedStatus", 0)
             .query(`
                 INSERT INTO tbl_bwr_ballastWater_main 
-                    (ballastWaterDischargeFacility_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (ballastWaterUptake_ID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);

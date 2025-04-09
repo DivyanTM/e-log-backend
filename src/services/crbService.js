@@ -118,7 +118,6 @@ async function createRecord3(data, vesselID) {
 async function createRecord4(data, vesselID) {
     const pool = await getPool();
     try {
-        if (missingFields.length === 0) {
             const formResult = await pool.request()
                 .input("tankDetails", data.tankDetails)
                 .input("numCleaningMachines", parseInt(data.numCleaningMachines) || 0)
@@ -154,7 +153,7 @@ async function createRecord4(data, vesselID) {
             `);
 
             return { success: true, operationID };
-        }
+        
     } catch (err) {
         console.error("Ballast Water Discharge Facility Service Error:", err.message);
         throw err;

@@ -16,7 +16,7 @@ async function getRecords(vesselID) {
             .input('vesselID', vesselID)
             .query(`
                 SELECT 
-                    r.operationID, r.createdAt, r.approvedBy, r.approvedStatus, 
+                    r.recordID, r.createdAt, r.approvedBy, r.approvedStatus, 
                     r.createdBy, r.vesselID, r.begin_LSFO_datetime, r.begin_LSFO_latitude, 
                     r.begin_LSFO_longitude, r.complete_LSFO_datetime, r.complete_LSFO_latitude, 
                     r.complete_LSFO_longitude, r.lsfo_volume_completion, r.regulated_entry_datetime, 
@@ -43,7 +43,7 @@ async function createRecord(data, vesselID) {
         request.input('vesselID', vesselID)
             .input('createdBy', data.createdBy)
             .input('approvedBy', data.approvedBy ?? null)
-            .input('approvedStatus', data.approvedStatus ?? 0)
+            .input('approvedStatus', 1)
             .input('begin_LSFO_datetime', data.begin_LSFO_datetime)
             .input('begin_LSFO_latitude', data.begin_LSFO_latitude)
             .input('begin_LSFO_longitude', data.begin_LSFO_longitude)
@@ -63,11 +63,12 @@ async function createRecord(data, vesselID) {
             .input('complete_HSFO_datetime', data.complete_HSFO_datetime)
             .input('complete_HSFO_latitude', data.complete_HSFO_latitude)
             .input('complete_HSFO_longitude', data.complete_HSFO_longitude)
+            .input("createdAt", new Date())
             .input('lsfo_volume_start', data.lsfo_volume_start);
 
         const result = await request.query(`
             INSERT INTO dbo.tbl_lsfo_changeover (
-                vesselID, createdBy, approvedBy, approvedStatus,
+                vesselID, createdBy, approvedBy, approvedStatus,createdAt,
                 begin_LSFO_datetime, begin_LSFO_latitude, begin_LSFO_longitude,
                 complete_LSFO_datetime, complete_LSFO_latitude, complete_LSFO_longitude,
                 lsfo_volume_completion, regulated_entry_datetime, regulated_entry_latitude, regulated_entry_longitude,
@@ -76,9 +77,9 @@ async function createRecord(data, vesselID) {
                 complete_HSFO_datetime, complete_HSFO_latitude, complete_HSFO_longitude,
                 lsfo_volume_start
             )
-            OUTPUT inserted.operationID
+            OUTPUT inserted.recordID
             VALUES (
-                @vesselID, @createdBy, @approvedBy, @approvedStatus,
+                @vesselID, @createdBy, @approvedBy, @approvedStatus,@createdAt,
                 @begin_LSFO_datetime, @begin_LSFO_latitude, @begin_LSFO_longitude,
                 @complete_LSFO_datetime, @complete_LSFO_latitude, @complete_LSFO_longitude,
                 @lsfo_volume_completion, @regulated_entry_datetime, @regulated_entry_latitude, @regulated_entry_longitude,
