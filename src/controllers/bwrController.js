@@ -80,6 +80,7 @@ async function createRecord(req, res) {
         try {
             const data = req.body.operationData;
             data.createdBy = parseInt(req.user.user_id); // Assign logged-in user ID
+            let vesselID = parseInt(req.user.vessel_id);
 
             // Validate required fields
             let missingFields = [];
@@ -87,10 +88,8 @@ async function createRecord(req, res) {
             if (!data.recordTime) missingFields.push("recordTime");
             if (!data.position) missingFields.push("position");
             if (!data.portFacilityName) missingFields.push("portFacilityName");
-            if (data.estimatedDischargedVolume === undefined) missingFields.push("estimatedDischargedVolume");
-            if (data.conformBWMPlan === undefined) missingFields.push("conformBWMPlan");
-            if (!data.vesselID) missingFields.push("vesselID");
-
+            if (!data.estimatedDischargedVolume) missingFields.push("estimatedDischargedVolume");
+            if (data.conformBWMPlan !== 0 && data.conformBWMPlan !== 1) missingFields.push("conformBWMPlan");
             if (missingFields.length > 0) {
                 return res.status(400).json({
                     message: `Missing required fields: ${missingFields.join(", ")}`
@@ -118,17 +117,16 @@ async function createRecord(req, res) {
         try {
             const data = req.body.operationData;
             data.createdBy = parseInt(req.user.user_id); // Assign logged-in user ID
+            let vesselID = parseInt(req.user.vessel_id);
 
             // Validate required fields
             let missingFields = [];
             if (!data.recordDate) missingFields.push("recordDate");
             if (!data.recordTime) missingFields.push("recordTime");
             if (!data.position) missingFields.push("position");
-            if (data.estimatedCirculatedVolume === undefined) missingFields.push("estimatedCirculatedVolume");
-            if (!data.treatmentSystemUsed) missingFields.push("treatmentSystemUsed");
-            if (data.conformBWMPlan === undefined) missingFields.push("conformBWMPlan");
-            if (!data.vesselID) missingFields.push("vesselID");
-            if (missingFields.length > 0) {
+            if (data.estimatedDischargedVolume === undefined) missingFields.push("estimatedDischargedVolume");
+            if (!data.remainingVolume) missingFields.push("remainingVolume");
+            if (data.conformBWMPlan !== 0 && data.conformBWMPlan !== 1) missingFields.push("conformBWMPlan");            if (missingFields.length > 0) {
                 return res.status(400).json({
                     message: `Missing required fields: ${missingFields.join(", ")}`
                 });
@@ -147,7 +145,7 @@ async function createRecord(req, res) {
                 res.status(500).json({ message: "Failed to create record." });
             }
         } catch (err) {
-            console.error("Error in createRecord2 controller:", err);
+            console.error("Error in createRecord3 controller:", err);
             res.status(500).json({ message: "Internal Server Error", error: err.message });
         }
     }
@@ -155,16 +153,16 @@ async function createRecord(req, res) {
         try {
             const data = req.body.operationData;
             data.createdBy = parseInt(req.user.user_id); // Assign logged-in user ID
+            let vesselID = parseInt(req.user.vessel_id);
 
             // Validate required fields
             let missingFields = [];
             if (!data.recordDate) missingFields.push("recordDate");
             if (!data.recordTime) missingFields.push("recordTime");
             if (!data.position) missingFields.push("position");
-            if (data.waterDepth === undefined) missingFields.push("waterDepth");
-            if (data.estimatedUptakeVolume === undefined) missingFields.push("estimatedUptakeVolume");
-            if (!data.vesselID) missingFields.push("vesselID");
-
+            if (!data.estimatedCirculatedVolume) missingFields.push("estimatedCirculatedVolume");
+            if (!data.treatmentSystemUsed) missingFields.push("treatmentSystemUsed");
+            if (data.conformBWMPlan !== 0 && data.conformBWMPlan !== 1) missingFields.push("conformBWMPlan");
             if (missingFields.length > 0) {
                 return res.status(400).json({
                     message: `Missing required fields: ${missingFields.join(", ")}`
@@ -184,7 +182,7 @@ async function createRecord(req, res) {
                 res.status(500).json({ message: "Failed to create record." });
             }
         } catch (err) {
-            console.error("Error in createRecord2 controller:", err);
+            console.error("Error in createRecord4 controller:", err);
             res.status(500).json({ message: "Internal Server Error", error: err.message });
         }
     }
@@ -192,16 +190,15 @@ async function createRecord(req, res) {
         try {
             const data = req.body.operationData;
             data.createdBy = parseInt(req.user.user_id); // Assign logged-in user ID
+            let vesselID = parseInt(req.user.vessel_id);
 
             // Validate required fields
             let missingFields = [];
             if (!data.recordDate) missingFields.push("recordDate");
             if (!data.recordTime) missingFields.push("recordTime");
             if (!data.position) missingFields.push("position");
-            if (!data.portFacilityName) missingFields.push("portFacilityName");
-            if (data.estimatedDischargedVolume === undefined) missingFields.push("estimatedDischargedVolume");
-            if (data.conformBWMPlan === undefined) missingFields.push("conformBWMPlan");
-            if (!data.vesselID) missingFields.push("vesselID");
+            if (!data.waterDepth) missingFields.push("waterDepth");
+            if (!data.estimatedUptakeVolume) missingFields.push("estimatedUptakeVolume");
 
             if (missingFields.length > 0) {
                 return res.status(400).json({
@@ -222,7 +219,7 @@ async function createRecord(req, res) {
                 res.status(500).json({ message: "Failed to create record." });
             }
         } catch (err) {
-            console.error("Error in createRecord2 controller:", err);
+            console.error("Error in createRecord5 controller:", err);
             res.status(500).json({ message: "Internal Server Error", error: err.message });
         }
     }
