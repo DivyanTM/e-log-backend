@@ -34,9 +34,13 @@ async function getAllRecords(vesselID) {
                 s.densityAt15C,
                 s.sulfurContentPercent,
                 s.supplierDeclarationFile,
+                s.verifiedAt,
+                s.verficationRemarks,
+                s.verificationStatus,
+                s.verifiedBy,
                 u.fullname as createdBy
             from tbl_bunkerDelivery s
-                     left join tbl_user u on u.user_id=s.createdBy
+            left join tbl_user u on u.user_id=s.createdBy
             where vesselId=@vesselID;
         `;
 try{
@@ -92,27 +96,34 @@ async function createRecords(data, vesselID) {
         }
 
         const request = await pool.request();
-        request.input("createdBy", sql.Int, data.createdBy)
-            .input("vesselId", sql.Int, vesselID)
-            .input("portOfBunkering", sql.NVarChar(255), data.port)
-            .input("deliveryDate", sql.Date, data.deliveryDate)
-            .input("supplierName", sql.NVarChar(255), data.supplierName)
-            .input("supplierAddress", sql.NVarChar(255), data.supplierAddress)
-            .input("supplierTelephone", sql.NVarChar(50), data.supplierTelephone)
-            .input("productName", sql.NVarChar(255), data.productName)
-            .input("quantityDeliveredMT", sql.Decimal(10, 2), data.quantity)
-            .input("densityAt15C", sql.Decimal(10, 2), data.density)
-            .input("sulfurContentPercent", sql.Decimal(10, 2), data.sulfurContent)
-            .input("supplierDeclarationFile", sql.VarBinary(sql.MAX), data.supplierDeclaration)
-            .input("createdAt", sql.DateTime, new Date());
+        request.input("verificationRemarks", sql.NVarChar(50), "verified")
+    .input("verifiedAt", sql.DateTime, new Date())
+    .input("verificationStatus", sql.Int, 0)
+    .input("verifiedBy", sql.Int, 2)
+    .input("approvedBy", sql.Int, 1)
+    .input("approvalStatus", sql.Int, 0)
+    .input("createdBy", sql.Int, data.createdBy)
+    .input("vesselId", sql.Int, vesselID)
+    .input("portOfBunkering", sql.NVarChar(255), data.port)
+    .input("deliveryDate", sql.Date, data.deliveryDate)
+    .input("supplierName", sql.NVarChar(255), data.supplierName)
+    .input("supplierAddress", sql.NVarChar(255), data.supplierAddress)
+    .input("supplierTelephone", sql.NVarChar(50), data.supplierTelephone)
+    .input("productName", sql.NVarChar(255), data.productName)
+    .input("quantityDeliveredMT", sql.Decimal(10, 2), data.quantity)
+    .input("densityAt15C", sql.Decimal(10, 2), data.density)
+    .input("sulfurContentPercent", sql.Decimal(10, 2), data.sulfurContent)
+    .input("supplierDeclarationFile", sql.VarBinary(sql.MAX), data.supplierDeclaration)
+    .input("createdAt", sql.DateTime, new Date());
+
 
         const query = `
             INSERT INTO tbl_bunkerDelivery 
-            (approvedby, approvalStatus, createdBy, vesselId, portOfBunkering, deliveryDate, 
+            (verficationRemarks,verifiedAt,verificationStatus,verifiedBy,approvedby, approvalStatus, createdBy, vesselId, portOfBunkering, deliveryDate, 
              supplierName, supplierAddress, supplierTelephone, productName, quantityDeliveredMT, 
              densityAt15C, sulfurContentPercent, supplierDeclarationFile, createdAt)
             VALUES 
-            (0, 0, @createdBy, @vesselId, @portOfBunkering, @deliveryDate, 
+            (@verificationRemarks,@verifiedAt,@verificationStatus,@verifiedBy,@approvedBy,@approvalStatus, @createdBy, @vesselId, @portOfBunkering, @deliveryDate, 
              @supplierName, @supplierAddress, @supplierTelephone, @productName, @quantityDeliveredMT, 
              @densityAt15C, @sulfurContentPercent, @supplierDeclarationFile, @createdAt);
         `;

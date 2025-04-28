@@ -50,9 +50,9 @@ async function createRecord(req, res) {
         const success = await GRBService.createRecord(data, vesselID);
 
         if (success) {
-            res.status(201).json({ message: "Record created successfully." });
+            res.status(201).json({ message: " Garbage record created successfully." });
         } else {
-            res.status(500).json({ message: "Failed to create record." });
+            res.status(500).json({ message: "Failed to create Garbage record." });
         }
 
     } catch (err) {

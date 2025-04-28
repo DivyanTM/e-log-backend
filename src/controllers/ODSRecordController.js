@@ -1,4 +1,4 @@
-import { getOperationByName, insertODSRecord, insertODSEquipment, getODSEquipmentByOperation, getODSRecordsByOperation } from "../services/ODSRecordService.js";
+import {  insertODSRecord, insertODSEquipment, getODSRecordsByOperation } from "../services/ODSRecordService.js";
 
 async function insertRecords1(req, res) {
     try {
@@ -7,17 +7,10 @@ async function insertRecords1(req, res) {
         const operation1='Equipments containing ODS';
         const userid = req.user.user_id;
         const vesselid = req.user.vessel_id;
-     
-        // Get operation IDs
-        const op1 = await getOperationByName(operation1,userid,vesselid);
-        
-
-        if (!op1 ) {
-            return res.status(400).send({ message: "Invalid operation names" });
-        }
-        // Insert equipment
-    
-        const result =  await insertODSEquipment({ equipment:equipment, operationId: op1.operationId });
+        equipment.operation1 = operation1;
+        equipment.userId = userid;
+        equipment.vesselId = vesselid;
+        const result =  await insertODSEquipment({ equipment:equipment});
         
 
         res.status(201).send({ result });
@@ -34,17 +27,14 @@ async function insertRecords2(req, res) {
         const userid = req.user.user_id;
         const vesselid = req.user.vessel_id;
         const operation2 = 'Record of Ozone-Depleting Substances';
-
-        // Get operation IDs
-        const op2 = await getOperationByName(operation2,userid,vesselid);
-
-        if ( !op2) {
-            return res.status(400).send({ message: "Invalid operation names" });
-        }
+        records.userId = userid;
+        records.vesselId = vesselid;
+        records.operation2 = operation2;
+        
 
         // Insert records
        
-            const result = await insertODSRecord({ records: records, operationId: op2.operationId });
+            const result = await insertODSRecord({ records: records });
         
 
         res.status(201).send({ result });
@@ -54,40 +44,11 @@ async function insertRecords2(req, res) {
     }
 }
 
-async function getRecordsByOperation1(req, res) {
+async function getRecordsByOperation(req, res) {
     try {
-        
-        const {  operationName } = req.params;
-        
-        const operation = await getOperationByName(operationName);
-        if (!operation) {
-            return res.status(404).send({ message: "Operation not found" });
-        }
-
-        
-        const records = await getODSEquipmentByOperation(req.user.vessel_id);
-        
-        res.status(200).send({ operationName,  records });
-    } catch (err) {
-        console.log(err);
-        return res.status(500).send({message:err.message||'Internal Server Error'});
-    }
-}
-
-
-async function getRecordsByOperation2(req, res) {
-    try {
-        const { operationName } = req.params;
-        
-        const operation = await getOperationByName(operationName);
-        if (!operation) {
-            return res.status(404).send({ message: "Operation not found" });
-        }
-
         const records = await getODSRecordsByOperation(req.user.vessel_id);
         
-        
-        res.status(200).send({ operationName, records });
+        return res.status(200).send( { records });
     } catch (err) {
         console.log(err);
         return res.status(500).send({message:err.message||'Internal Server Error'});
@@ -95,4 +56,7 @@ async function getRecordsByOperation2(req, res) {
 }
 
 
-export  default { insertRecords1, insertRecords2 ,getRecordsByOperation1 ,getRecordsByOperation2};
+
+
+
+export  default { insertRecords1, insertRecords2 ,getRecordsByOperation };

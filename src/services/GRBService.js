@@ -67,12 +67,16 @@ async function createRecord(data,vesselID){
             .input('approvalStatus', 0  );
 
         const result = await request.query(`
+
+
         INSERT INTO tbl_garbage_record_book (vesselID, occasion, area, date, time, position, methodOfDisposal,
             plastics, foodWaste, domesticWaste, cookingOil, incineratorAsh, operationalWaste, 
             animalCarcasses, fishingGear, eWaste, remarks, createdBy, approvalStatus)
         VALUES (@vesselID, @occasion, @area, @date, @time, @position, @methodOfDisposal, 
             @plastics, @foodWaste, @domesticWaste, @cookingOil, @incineratorAsh, @operationalWaste, 
-            @animalCarcasses, @fishingGear, @eWaste, @remarks, @createdBy, @approvalStatus)
+            @animalCarcasses, @fishingGear, @eWaste, @remarks, @createdBy, @approvalStatus);
+
+
     `);
 
         return result.rowsAffected[0] > 0;

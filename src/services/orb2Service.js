@@ -1,4 +1,4 @@
-import sql from "mssql";
+import sql  from "mssql";
 import {getPool} from "../config/DBConfig.js";
 
 let pool;
@@ -11,180 +11,68 @@ let pool;
         }
 })();
 
-async function checkAndCreate(operation, user, vessel) {
-    try {
-       
-        const approvedby = 1;
-        const approvalStatus = 0;
-        
-        // Check if operation exists
-        const res = await pool
-            .request()
-            .input("operationName", sql.NVarChar, operation)
-            .query("SELECT recordId FROM tbl_orb_2 WHERE recordName = @operationName");
 
-        if (!res.recordset.length) {
-           
-            
-            await pool
-                .request()
-                .input("operationName", sql.NVarChar, operation)
-                .input("createdBy", sql.Int, user)
-                .input("vesselId", sql.Int, vessel)
-                .input("approvedby", sql.Int, approvedby)
-                .input("approvalStatus", sql.Int, approvalStatus)
-                .query(`INSERT INTO tbl_orb_2 (recordName, createdBy, vesselId, approvedby, approvalStatus) 
-                        VALUES (@operationName, @createdBy, @vesselId, @approvedby, @approvalStatus)`);
-            
-            console.log("Operation created successfully at", new Date());
-        } else {
-            console.log("Operation already exists");
-        }
-    } catch (error) {
-        console.error("Error in checkAndCreate:", error.message);
-        throw new Error("Database operation failed: " + error.message);
-    }
-}
-
-async function getOperationByName(operationName, user, vessel) {
-    try {
-        await checkAndCreate(operationName, user, vessel);
-
-        const result = await pool
-            .request()
-            .input("operationName", sql.NVarChar, operationName)
-            .query("SELECT recordId, vesselId, createdBy FROM tbl_orb_2 WHERE recordName = @operationName");
-
-        return result.recordset.length ? result.recordset[0] : null;
-    } catch (error) {
-        console.error("Error in getOperationByName:", error.message);
-        throw new Error("Database query failed: " + error.message);
-    }
-}
 
 async function processOperation(operationType, formData, user, vessel) {
     try {
         switch (operationType) {
             case "A":
-        const res = await getOperationByName('Loading of oil cargo', user, vessel);
-        if (!res) {
-        throw new Error("Failed to retrieve operation recordId");
-            }
-        return await insertLoadingOilCargo(res.recordId, formData);
+        
+        return await insertLoadingOilCargo('Loading of oil cargo', formData,user,vessel);
 
             case "B":
-                const resIT = await getOperationByName('Internal transfer of oil cargo during voyage', user, vessel);
-                if (!resIT) {
-                throw new Error("Failed to retrieve operation recordId");
-                }
-                return await insertInternalTransfer(resIT.recordId, formData);
+                
+               
+                return await insertInternalTransfer('Internal transfer of oil cargo during voyage', formData,user,vessel);
             case "C":
                 
-                const resUOOC = await getOperationByName('Unloading of oil cargo', user, vessel);
-                if (!resUOOC) {
-                throw new Error("Failed to retrieve operation recordId");
-                }
-                return await insertUnloadingCargo(resUOOC.recordId, formData);
+                return await insertUnloadingCargo('Unloading of oil cargo', formData,user,vessel);
             case 'D':
-                const resCOW = await getOperationByName('Crude Oil Washing (COW Tankers only)', user, vessel);
-                if (!resCOW) {
-                throw new Error("Failed to retrieve operation recordId");
-                }
-                return await insertCrudeOilWashing(resCOW.recordId, formData);
-                case 'E':
-                    const resBCT = await getOperationByName('Ballasting of cargo tanks', user, vessel);
-                    if (!resBCT) {
-                    throw new Error("Failed to retrieve operation recordId");
-                    }
-                    return await insertBallastingOfCargoTanks(resBCT.recordId, formData);
+                
+                return await insertCrudeOilWashing('Crude Oil Washing (COW Tankers only)', formData,user,vessel);
+            case 'E':
+                    return await insertBallastingOfCargoTanks('Ballasting of cargo tanks', formData,user,vessel);
             
             case 'F':
-                        const resCBT = await getOperationByName('Ballasting of dedicated clean ballasting tanks (CBT Tankers only)', user, vessel);
-                    if (!resCBT) {
-                    throw new Error("Failed to retrieve operation recordId");
-                    }
-                    return await insertCleanBallastingTanks(resCBT.recordId, formData);
+                    return await insertCleanBallastingTanks('Ballasting of dedicated clean ballasting tanks (CBT Tankers only)', formData, user, vessel);
             case 'G':
-                    const resCOCT = await getOperationByName('Cleaning of cargo tanks', user, vessel);
-                    if (!resCOCT) {
-                    throw new Error("Failed to retrieve operation recordId");
-                    }
-                    return await insertCleaningOfCargoTanks(resCOCT.recordId, formData);
+                    return await insertCleaningOfCargoTanks('Cleaning of cargo tanks', formData,user , vessel);
             case 'H':
-                const resDODB = await getOperationByName('Discharge of dirty ballast', user, vessel);
-                if (!resDODB) {
-                throw new Error("Failed to retrieve operation recordId");
-                }
-                return await insertDischargeOfDirtyBallast(resDODB.recordId, formData);
+                
+                return await insertDischargeOfDirtyBallast('Discharge of dirty ballast', formData, user, vessel);
             case 'I':
-                const resDWST = await getOperationByName('Discharge of water from slop tanks into the sea', user, vessel);
-                if (!resDWST) {
-                throw new Error("Failed to retrieve operation recordId");
-                }
-                return await insertDischargeOfSlopTanks(resDWST.recordId, formData);
+        
+                return await insertDischargeOfSlopTanks('Discharge of water from slop tanks into the sea', formData, user, vessel);
             case 'J':
-                const resCTDR = await getOperationByName('Collection, Transfer and disposal of residues not otherwise dealt with',user,vessel);
-                if (!resCTDR) {
-                    throw new Error("Failed to retrieve operation recordId");
-                    }
-                    return await insertCTDR(resCTDR.recordId, formData);
+               
+                return await insertCTDR('Collection, Transfer and disposal of residues not otherwise dealt with', formData, user, vessel);
             case 'K':
-                const resCBCICT = await getOperationByName('Discharge of clean ballast contained in cargo tanks',user,vessel);
-                if (!resCBCICT) {
-                    throw new Error("Failed to retrieve operation recordId");
-                    }
-                    return await insertCleanBallastContainedInCargoTanks(resCBCICT.recordId, formData);
+               
+                    return await insertCleanBallastContainedInCargoTanks('Discharge of clean ballast contained in cargo tanks', formData, user, vessel);
             case 'L':
-              const resDCBT = await getOperationByName('Discharge of ballast from dedicated clean ballast tanks (CBT Tankers only)',user,vessel);
-                if (!resDCBT) {
-                    throw new Error("Failed to retrieve operation recordId");
-                    }
-                    return await insertDischargeOfDedicatedCBT(resDCBT.recordId, formData);
+            
+                    return await insertDischargeOfDedicatedCBT('Discharge of ballast from dedicated clean ballast tanks (CBT Tankers only)', formData, user, vessel);
             case 'M':
-                const resODMS = await getOperationByName('Condition of oil discharge monitoring and control system',user,vessel);
-                if(!resODMS)
-                {
-                    throw new Error("Failed to retrieve operation recordId");
-                }
-                return await insertOilDischargeMonitoringSystem(resODMS.recordId, formData);
+               
+                return await insertOilDischargeMonitoringSystem('Condition of oil discharge monitoring and control system', formData, user, vessel);
             case 'N':
-                const resAOOEDOO = await getOperationByName('Accidental or other exceptional discharges of oil',user,vessel);
-                if(!resAOOEDOO)
-                {
-                    throw new Error("Failed to retrieve operation recordId");
-                }
-                return await insertAccidentOtherDischarge(resAOOEDOO.recordId, formData);
+                
+                return await insertAccidentOtherDischarge('Accidental or other exceptional discharges of oil', formData, user, vessel);
             case 'O':
-                const resAOP = await getOperationByName('Additional operational procedures and general remarks',user,vessel);
-                if(!resAOP)
-                {
-                    throw new Error("Failed to retrieve operation recordId");
-                }
-                return await insertAdditionalProcedure(resAOP.recordId, formData);
+                
+                return await insertAdditionalProcedure('Additional operational procedures and general remarks', formData, user, vessel);
             
             case 'P':
-                const resLBW = await getOperationByName('Loading of ballast water',user,vessel);
-                if(!resLBW)
-                {
-                    throw new Error("Failed to retrieve operation recordId");
-                }
-                return await insertLoadingBallastWater(resLBW.recordId, formData);
+                
+                return await insertLoadingBallastWater('Loading of ballast water', formData, user, vessel);
             
-                case 'Q':
-                    const resROBW = await getOperationByName('Re-allocation of ballast water within the ship',user,vessel);
-                    if(!resROBW)
-                    {
-                        throw new Error("Failed to retrieve operation recordId");
-                    }
-                    return await insertReallocationBallastWater(resROBW.recordId, formData);
+            case 'Q':
+                    
+                    return await insertReallocationBallastWater('Re-allocation of ballast water within the ship', formData,user, vessel);
             
                 case 'R':
-                        const resBWDRF = await getOperationByName('Ballast water discharge to reception facility',user,vessel);
-                        if(!resBWDRF)
-                        {
-                            throw new Error("Failed to retrieve operation recordId");
-                        }
-                        return await insertBallastWaterDischargeTORF(resBWDRF.recordId, formData);
+                       
+                        return await insertBallastWaterDischargeTORF('Ballast water discharge to reception facility', formData, user, vessel);
             
             default:
                 
@@ -196,139 +84,684 @@ async function processOperation(operationType, formData, user, vessel) {
     }
 }
 
-async function fetchOperation(operationType, user, vessel) {
-    try {
-        const optype = operationType.operationType;
-        switch (optype) {
-        case 'A':
-                
-        const res = await getOperationByName('Loading of oil cargo', user, vessel);
-        if (!res) {
-        throw new Error("Failed to retrieve operation recordId");
-            }
-        return await fetchLoadingOilCargo(vessel);
+function flattenObject(obj, parent = "", res = {}) {
+  for (let key in obj) {
+    if (!obj.hasOwnProperty(key)) continue;
 
-            case "B":
-                const resIT = await getOperationByName('Internal transfer of oil cargo during voyage', user, vessel);
-                if (!resIT) {
-                throw new Error("Failed to retrieve operation recordId");
-                }
-                return await fetchInternalTransfer(vessel);
-            case "C":
-                const resUOOC = await getOperationByName('Unloading of oil cargo', user, vessel);
-                if (!resUOOC) {
-                throw new Error("Failed to retrieve operation recordId");
-                }
-                return await fetchUnloadingCargo(vessel);
-            case 'D':
-                const resCOW = await getOperationByName('Crude Oil Washing (COW Tankers only)', user, vessel);
-                if (!resCOW) {
-                throw new Error("Failed to retrieve operation recordId");
-                }
-                return await fetchCrudeOilWashing(resCOW.recordId,user,vessel);
-            case 'E':
-                    const resBCT = await getOperationByName('Ballasting of cargo tanks', user, vessel);
-                    if (!resBCT) {
-                    throw new Error("Failed to retrieve operation recordId");
-                    }
-                    return await fetchBallastingOfCargoTanks(vessel);
-                case 'F':
-                    const resCBT = await getOperationByName('Ballasting of dedicated clean ballasting tanks (CBT Tankers only)', user, vessel);
-                    if (!resCBT) {
-                    throw new Error("Failed to retrieve operation recordId");
-                    }
-                    return await fetchCleanBallastingTanks(vessel);
-                case 'G':
-                        const resCOCT = await getOperationByName('Cleaning of cargo tanks', user, vessel);
-                        if (!resCOCT) {
-                        throw new Error("Failed to retrieve operation recordId");
-                        }
-                        return await fetchCargoTankCleaning(vessel);
-                 case 'H':
-                            const resDODB = await getOperationByName('Discharge of dirty ballast', user, vessel);
-                            if (!resDODB) {
-                            throw new Error("Failed to retrieve operation recordId");
-                            }
-                            return await fetchDODB(vessel);
-                case 'I':
-                        const resDOWFST = await getOperationByName('Discharge of water from slop tanks into the sea', user, vessel);
-                        if (!resDOWFST) {
-                        throw new Error("Failed to retrieve operation recordId");
-                        }
-                        return await fetchDischargeWaterSlopTanks(vessel);
-                        case 'J':
-                            const resCTDOR = await getOperationByName('Collection,Transfer and disposal of residues not otherwise dealt with', user, vessel);
-                            if (!resCTDOR) {
-                            throw new Error("Failed to retrieve operation recordId");
-                            }
-                            return await fetchCTDOfResidues(vessel);
-                    case 'K':
-                        const resDOCBCT = await getOperationByName('Discharge of clean ballast contained in cargo tanks', user, vessel);
-                        if (!resDOCBCT) {
-                        throw new Error("Failed to retrieve operation recordId");
-                        }
-                        return await fetchDischargeOfCleanBallast(vessel);
-                    case 'L':
-                            const resDOBFD = await getOperationByName('Discharge of ballast from dedicated clean ballast tanks (CBT Tankers only)', user, vessel);
-                            if (!resDOBFD) {
-                            throw new Error("Failed to retrieve operation recordId");
-                            }
-                            return await fetchDischargeOfBallastFromDedicated(vessel);
+    const value = obj[key];
+    const fullKey = parent ? `${parent}.${key}` : key;
 
-                    case 'M':
-                        const resCOODMAC = await getOperationByName('Condition of oil discharge monitoring and control system', user, vessel);
-                        if (!resCOODMAC) {
-                        throw new Error("Failed to retrieve operation recordId");
-                        }
-                        return await fetchConditionOfODMAC(vessel);
-                    case 'N':
-                            const resAOOED = await getOperationByName('Accidental or other exceptional discharges of oil', user, vessel);
-                            if (!resAOOED) {
-                            throw new Error("Failed to retrieve operation recordId");
-                            }
-                            return await fetchAccidentOrOtherExceptional(vessel);
-                    case 'O':
-                        const resAOP = await getOperationByName('Additional operational procedures and general remarks', user, vessel);
-                        if (!resAOP) {
-                        throw new Error("Failed to retrieve operation recordId");
-                        }
-                        return await fetchAdditionalOperationalProcedures(vessel);
-                    case 'P':
-                            const resLBW = await getOperationByName('Loading of ballast water', user, vessel);
-                            if (!resLBW) {
-                            throw new Error("Failed to retrieve operation recordId");
-                            }
-                            return await fetchLoadingOfBallastWater(vessel);
-                    case 'Q':
-                        const resROBW = await getOperationByName('Re-allocation of ballast water within the ship', user, vessel);
-                        if (!resROBW) {
-                        throw new Error("Failed to retrieve operation recordId");
-                        }
-                        return await fetchReallocationOfBallastWater(vessel);
-                    case 'R':
-                            const resBWDTRF = await getOperationByName('Ballast water discharge to reception facility', user, vessel);
-                            if (!resBWDTRF) {
-                            throw new Error("Failed to retrieve operation recordId");
-                            }
-                            return await fetchBallastWaterDischargeToRF(vessel);
-                   
-            default:
-                return { message: "Operation not implemented" };
-        }
-    } catch (error) {
-        console.error("Service error:", error);
-        throw new Error("Database operation failed");
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => {
+        flattenObject(item, `${fullKey}[${index}]`, res);
+      });
+    } else if (typeof value === "object" && value !== null) {
+      flattenObject(value, fullKey, res);
+    } else {
+      res[fullKey] = value;
     }
+  }
+  return res;
 }
 
-async function insertReallocationBallastWater(recordId, data) {
+
+function prettifyKeys(obj) {
+  const newObj = {};
+
+  for (const key in obj) {
+    if (!obj.hasOwnProperty(key)) continue;
+
+    let prettyKey = key;
+
+    // Convert array-style keys like Tanks[0].TankIdentity
+    prettyKey = prettyKey.replace(/(\w+)\[(\d+)\]\.(\w+)/g, (_, arrayName, index, subKey) => {
+      return `${singularize(arrayName)} ${parseInt(index) + 1} - ${insertSpaces(subKey)}`;
+    });
+
+    // Convert nested keys like placeOfLoading → Place Of Loading
+    prettyKey = prettyKey
+      .replace(/([a-z])([A-Z])/g, "$1 $2") // camelCase to words
+      .replace(/^./, str => str.toUpperCase()); // Capitalize first letter
+
+    newObj[prettyKey] = obj[key];
+  }
+
+  return newObj;
+}
+
+
+function insertSpaces(str) {
+  return str.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, s => s.toUpperCase());
+}
+
+
+function singularize(word) {
+  if (word.endsWith('s')) return word.slice(0, -1);
+  return word;
+}
+
+
+function formatDates(obj) {
+  const isDate = (val) => /^\d{4}-\d{2}-\d{2}$/.test(val);
+  const isTime = (val) => /^\d{2}:\d{2}:\d{2}$/.test(val);
+  const isDateTime = (val) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?$/.test(val);
+
+  const timeOnlyKeys = [
+    "startTimeWashing",
+    "stopTimeWashing",
+    "startTime",
+    "stopTime",
+    "timeSystemOperational",
+    "timeOfSystemFailure",
+    "timeOfOccurrence",
+    "timeStart",
+    "timeCompletion",
+    "valveCloseTime",
+    "settlingLastResidues",
+    "settlingLastDischarge"
+   
+  ];
+
+  const dateOnlyKeys = [
+    "dateOfOperation",
+    "dateOfUnloading",
+    "dateOfTransfer",
+    "failureDate",
+    "occurrenceDate",
+    "operationDate"
+  ];
+
+  const dateTimeKeys = [
+    "StartTime",
+    "endTime",
+    "createdAt"
+    
+  ];
+
+  for (const key in obj) {
+    const val = obj[key];
+
+    if (val instanceof Date) {
+      if (timeOnlyKeys.includes(key)) {
+        obj[key] = val.toLocaleTimeString();
+      } else if (dateOnlyKeys.includes(key)) {
+        obj[key] = val.toLocaleDateString();
+      } else if (dateTimeKeys.includes(key)) {
+        obj[key] = val.toLocaleString();
+      }
+    } else if (typeof val === "string") {
+      if (isDateTime(val)) {
+        const date = new Date(val);
+        if (timeOnlyKeys.includes(key)) {
+          obj[key] = date.toLocaleTimeString();
+        } else if (dateOnlyKeys.includes(key)) {
+          obj[key] = date.toLocaleDateString();
+        } else if (dateTimeKeys.includes(key)) {
+          obj[key] = date.toLocaleString();
+        } else {
+          obj[key] = date.toLocaleString(); // Default fallback
+        }
+      } else if (isDate(val)) {
+        const date = new Date(val + "T00:00:00");
+        obj[key] = date.toLocaleDateString();
+      } else if (isTime(val)) {
+        const date = new Date("1970-01-01T" + val);
+        obj[key] = date.toLocaleTimeString();
+      }
+    }
+  }
+
+  return obj;
+}
+
+
+function renameKeys(obj, keyMap) {
+  for (const oldKey in keyMap) {
+    if (obj.hasOwnProperty(oldKey)) {
+      obj[keyMap[oldKey]] = obj[oldKey];
+      delete obj[oldKey];
+    }
+  }
+  return obj;
+}
+  
+  async function fetchOperation(vesselID) {
+    try {
+      const result = await pool
+        .request()
+        .input("vesselID", sql.Int, vesselID)
+        .query(`
+          
+                SELECT 
+    ods.*,
+    u.fullname AS createdby
+FROM 
+    tbl_orb_2 AS ods
+LEFT JOIN 
+    tbl_user AS u ON ods.createdby = u.user_id
+WHERE 
+    ods.vesselId = @vesselId
+ORDER BY 
+    ods.createdAt DESC;
+          `);
+  
+      const records = result.recordset;
+  
+      for (const record of records) {
+        const { recordId } = record;
+  
+        if (record.Ballasting_id != null) {
+          const mainRes = await pool
+            .request()
+            .input("operationId", sql.Int, record.Ballasting_id)
+            .query("SELECT * FROM Ballasting WHERE operationId = @operationId");
+        
+          let mainData = mainRes.recordset[0];
+        
+          const tankRes = await pool
+            .request()
+            .input("ballastingId", sql.Int, mainData.operationId)
+            .query("SELECT tankIdentity, startTime AS StartTime, endTime, quantity FROM BallastingTanks WHERE ballastingId = @ballastingId");
+        
+          delete mainData.operationId;
+        
+        
+          const formattedTanks = tankRes.recordset.map(tank => {
+            const formattedTank = formatDates({ ...tank });
+            if (formattedTank.quantity !== undefined && formattedTank.quantity !== null) {
+              formattedTank.quantity = `${formattedTank.quantity} m³`;
+            }
+            return formattedTank;
+          });
+        
+     
+          const formattedMainData = formatDates({ ...mainData });
+        
+      
+          const mergedData = {
+            ...formattedMainData,
+            tanks: formattedTanks,
+          };
+        
+
+          record.details = prettifyKeys(flattenObject(mergedData));
+        
+        }
+        
+        
+        else if (record.UnloadingOfOilCargo_id != null) { 
+          const mainRes = await pool
+            .request()
+            .input("orb2Id", sql.Int, record.UnloadingOfOilCargo_id)
+            .query("SELECT operationId,placeOfUnloading,tankEmptied,quantityRetainedM3 AS quantityRetained FROM UnloadingOfOilCargo WHERE operationId = @orb2Id");
+          let mainData = mainRes.recordset[0];
+        
+        
+          if (mainData) {
+            const tankRes = await pool
+              .request()
+              .input("orb2Id", sql.Int, mainData.operationId)
+              .query("SELECT * FROM UnloadingOfOilCargo_Tanks WHERE operationId = @orb2Id");
+        
+            delete mainData.operationId;
+        
+            const enrichedTanks = tankRes.recordset.map(tank => ({
+              Tank: tank.tankIdentity,
+              quantityDischarged: parseFloat(tank.quantity).toFixed(2) + " m³"
+            }));
+        
+            const result = {
+              ...mainData,
+              quantityRetained: parseFloat(mainData.quantityRetained).toFixed(2) + " m³",
+              tanks: enrichedTanks
+            };
+        
+            record.details = prettifyKeys(
+              flattenObject(
+                formatDates(result)
+              )
+            );
+          }
+        }
+         
+          
+        else if (record.LoadingOfOilCargo_id != null) {
+            
+            const mainRes = await pool
+              .request()
+              .input("id", sql.Int, record.LoadingOfOilCargo_id)
+              .query(`
+                SELECT operationId, placeOfLoading, typeOfOilLoaded,
+                       quantityAddedM3 AS quantityAdded, totalContentOfTanksM3 AS totalContentOfTanks, createdAt
+                FROM LoadingOfOilCargo
+                WHERE operationId = @id
+              `);
+         
+            const mainData = mainRes.recordset[0];
+          
+            if (mainData) {
+              
+              const tankRes = await pool
+                .request()
+                .input("operationId", sql.Int, mainData.operationId)
+                .query(`
+                  SELECT  tankIdentity, quantityLoadedM3
+                  FROM LoadingOfOilCargo_Tanks
+                  WHERE operationId = @operationId
+                `);
+              delete mainData.operationId;
+              const enrichedTanks = tankRes.recordset.map(tank => ({
+                
+                Tank: tank.tankIdentity,
+                quantityLoaded: parseFloat(tank.quantityLoadedM3).toFixed(2) + " m³"
+              }));
+              const result = {
+                
+                ...mainData,
+                quantityAdded: parseFloat(mainData.quantityAdded).toFixed(2) + " m³",
+                totalContentOfTanks:parseFloat( mainData.totalContentOfTanks).toFixed(2) + " m³",
+                tanks: enrichedTanks,
+              };
+          
+              record.details = prettifyKeys(flattenObject(formatDates(result)));
+              
+            }
+          }
+          else if (record.InternalTransferOfOilcargo_id != null) {
+            const mainRes = await pool
+              .request()
+              .input("orb2Id", sql.Int, record.InternalTransferOfOilcargo_id)
+              .query(`SELECT * FROM InternalTransferOfOilCargo WHERE operationId = @orb2Id`);
+          
+            let mainData = mainRes.recordset[0];
+          mainData = renameKeys(mainData,{"totalQuantityOfTanksM3":"totalQuantityOfTanks","quantityRetainedM3":"quantityRetained"});
+            if (mainData) {
+              const tankRes = await pool
+                .request()
+                .input("orb2Id", sql.Int, mainData.operationId)
+                .query(`SELECT tankIdentity AS tank, tankRole, tankQuantity FROM InternalTransfer_Tanks WHERE operationId = @orb2Id`);
+          
+              delete mainData.operationId;
+          
+              const enrichedTanks = tankRes.recordset.map(tank => ({
+                Tank: tank.tank,
+                Role: tank.tankRole,
+                quantity: parseFloat(tank.tankQuantity).toFixed(2) + " m³"
+              }));
+          
+              const result = {
+                ...mainData,
+                quantityTransferred: mainData.quantityTransferred != null ? parseFloat(mainData.quantityTransferred).toFixed(2) + " m³" : null,
+                totalQuantityOfTanks: mainData.totalQuantityOfTanks != null ? parseFloat(mainData.totalQuantityOfTanks).toFixed(2) + " m³" : null,
+                quantityRetained: mainData.quantityRetained != null ? parseFloat(mainData.quantityRetained).toFixed(2) + " m³" : null,
+                tanks: enrichedTanks,
+              };
+          
+              record.details = prettifyKeys(flattenObject(formatDates(result)));
+            }
+          }
+          else if (record.LoadingBallastWater_id != null) {
+            const mainRes = await pool
+              .request()
+              .input("orb2Id", sql.Int, record.LoadingBallastWater_id)
+              .query(`SELECT * FROM LoadingBallastWater WHERE operationId = @orb2Id`);
+        
+            const tankRes = await pool
+              .request()
+              .input("orb2Id", sql.Int,mainRes.recordset[0].operationId)
+              .query(`SELECT tankIdentity AS tankName FROM LoadingBallastWaterTanks WHERE operationId = @orb2Id`);
+            delete mainRes.recordset[0].operationId;
+            record.details = prettifyKeys(
+              flattenObject(
+                formatDates(
+                    {
+                        
+                        ...mainRes.recordset[0],
+                        tanks: tankRes.recordset,
+                      }
+                )
+              )
+            );
+          }
+          
+          else if (record.BallastWaterDischargeReception_id != null) {
+            const mainRes = await pool
+              .request()
+              .input("orb2Id", sql.Int, record.BallastWaterDischargeReception_id)
+              .query(`SELECT * FROM BallastWaterDischargeReception WHERE operationId = @orb2Id`);
+          delete mainRes.recordset[0].operationId;
+            record.details = prettifyKeys(
+              flattenObject(
+                formatDates(
+                    {
+                        
+                        ...mainRes.recordset[0],
+                      }
+                )
+              )
+            );
+          }
+          
+          else if (record.CbtBallasting_id != null) {
+            const mainRes = await pool
+              .request()
+              .input("orb2Id", sql.Int, record.CbtBallasting_id)
+              .query(`SELECT * FROM CbtBallasting WHERE operationId = @orb2Id`);
+          
+            const tankRes = await pool
+              .request()
+              .input("orb2Id", sql.Int, record.CbtBallasting_id)
+              .query(`SELECT * FROM CbtBallastingTanks WHERE operationId = @orb2Id`);
+          
+            record.details = prettifyKeys(
+              flattenObject(formatDates(
+                {
+                    operation: "CBT Ballasting",
+                    ...mainRes.recordset[0],
+                    tanks: tankRes.recordset,
+                  }
+              ))
+            );
+          }
+          
+          else if (record.CargoTankCleaning_id != null) {
+            const mainRes = await pool
+              .request()
+              .input("orb2Id", sql.Int, record.CargoTankCleaning_id)
+              .query("SELECT * FROM CargoTankCleaning WHERE operationId = @orb2Id");
+          
+            let mainData = mainRes.recordset[0];
+          
+            if (mainData.tankWashingTransferredTo === 'Reception Facilities') {
+              const twtRes = await pool
+                .request()
+                .input('operationId', sql.Int, mainData.operationId)
+                .query(`
+                  SELECT * FROM ReceptionFacilities WHERE operationId = @operationId;
+                `);
+          
+              const rf = twtRes.recordset.map(recepFac => ({
+                port: recepFac.port,
+                quantity: parseFloat(recepFac.quantity || 0).toFixed(2) + ' m³'
+              }));
+          
+              mainData.receptionFacilities = rf;
+            } 
+            else if (mainData.tankWashingTransferredTo === 'Slop/Cargo Tank(s)') {
+              const slopRes = await pool
+                .request()
+                .input('operationId', sql.Int, mainData.operationId)
+                .query(`
+                  SELECT * FROM SlopCargoTanks WHERE operationId = @operationId;
+                `);
+          
+              const st = slopRes.recordset.map(slopTank => ({
+                tankName: slopTank.tankName,
+                quantityTransferred: parseFloat(slopTank.quantityTransferred || 0).toFixed(2) + ' m³',
+                totalQuantity: parseFloat(slopTank.totalQuantity || 0).toFixed(2) + ' m³'
+              }));
+          
+              mainData.slopTanks = st;
+            }
+          
+            const tankRes = await pool
+              .request()
+              .input("cargoTankCleaningId", sql.Int, mainData.operationId)
+              .query("SELECT tankIdentity FROM CargoTankCleaningTanks WHERE operationId = @cargoTankCleaningId");
+          
+            delete mainData.operationId; // OK to delete here after all fetching is done
+          
+            // ✨ Format final object manually
+            const fullData = {
+              ...mainData,
+              tanks: tankRes.recordset // keep tanks as array
+            };
+          
+            record.details = prettifyKeys(
+              {
+                ...flattenObject(formatDates(fullData)),
+                ...(mainData.receptionFacilities ? { receptionFacilities: mainData.receptionFacilities } : {}),
+                ...(mainData.slopTanks ? { slopTanks: mainData.slopTanks } : {})
+              }
+            );
+          
+            console.log(record.details);
+          }
+          
+          
+  
+        else if (record.DirtyBallastDischarge_id != null) {
+          const mainRes = await pool
+            .request()
+            .input("orb2Id", sql.Int, record.DirtyBallastDischarge_id)
+            .query("SELECT * FROM DirtyBallastDischarge WHERE operationId = @orb2Id");
+          const tankRes = await pool
+            .request()
+            .input("dirtyBallastDischargeId", sql.Int, record.DirtyBallastDischarge_id)
+            .query("SELECT * FROM DirtyBallastDischargeTanks WHERE operationId = @dirtyBallastDischargeId");
+  
+          record.details = prettifyKeys(
+            flattenObject(
+                formatDates(
+                    {
+                        operation: "Dirty Ballast Discharge",
+                        ...mainRes.recordset[0],
+                        tanks: tankRes.recordset,
+                      }
+                )
+            )
+          );
+        }
+  
+        else if (record.SlopTankDischarge_id != null) {
+          const mainRes = await pool
+            .request()
+            .input("orb2Id", sql.Int, record.SlopTankDischarge_id)
+            .query("SELECT * FROM SlopTankDischarge WHERE operationId = @orb2Id");
+          const tankRes = await pool
+            .request()
+            .input("slopTankDischargeId", sql.Int, record.SlopTankDischarge_id)
+            .query("SELECT * FROM SlopTankDischargeTanks WHERE operationId = @slopTankDischargeId");
+  
+          record.details = prettifyKeys(
+            flattenObject(formatDates({
+              operation: "Slop Tank Discharge",
+              ...mainRes.recordset[0],
+              tanks: tankRes.recordset,
+            })
+          ));
+        }
+  
+        else if (record.CleanBallastDischarge_id != null) {
+          const mainRes = await pool
+            .request()
+            .input("orb2Id", sql.Int, record.CleanBallastDischarge_id)
+            .query("SELECT * FROM CleanBallastDischarge WHERE operationId = @orb2Id");
+          const tankRes = await pool
+            .request()
+            .input("cleanBallastDischargeId", sql.Int, record.CleanBallastDischarge_id)
+            .query("SELECT * FROM CleanBallastDischargeTanks WHERE operationId = @cleanBallastDischargeId");
+  
+          record.details = prettifyKeys(
+            flattenObject(formatDates({
+              operation: "Clean Ballast Discharge",
+              ...mainRes.recordset[0],
+              tanks: tankRes.recordset,
+            })
+          ));
+        }
+  
+        else if (record.CbtBallastDischarge_id != null) {
+          const mainRes = await pool
+            .request()
+            .input("orb2Id", sql.Int, record.CbtBallastDischarge_id)
+            .query("SELECT * FROM CbtBallastDischarge WHERE operationId = @orb2Id");
+          const tankRes = await pool
+            .request()
+            .input("cbtBallastDischargeId", sql.Int, record.CbtBallastDischarge_id)
+            .query("SELECT * FROM CbtBallastDischargeTanks WHERE operationId = @cbtBallastDischargeId");
+  
+          record.details = prettifyKeys(
+            flattenObject(formatDates({
+              operation: "Dedicated Clean Ballast Discharge",
+              ...mainRes.recordset[0],
+              tanks: tankRes.recordset,
+            })
+          ));
+        }
+  
+        else if (record.ResidueTransferDisposal_id != null) {
+          const mainRes = await pool
+            .request()
+            .input("orb2Id", sql.Int, record.ResidueTransferDisposal_id)
+            .query("SELECT * FROM ResidueTransferDisposal WHERE operationId = @orb2Id");
+        
+          if (mainRes.recordset.length === 0) {
+            console.warn(`No ResidueTransferDisposal found for ID ${record.ResidueTransferDisposal_id}`);
+            continue;
+          }
+        
+          const disposalId = mainRes.recordset[0].operationId;
+        
+          const result = await pool.request()
+            .input("disposalId", sql.Int, disposalId)
+            .query(`
+              SELECT * FROM DisposalMixedCargo WHERE operationId = @disposalId;
+              SELECT * FROM DisposalOtherMethod WHERE operationId = @disposalId;
+              SELECT * FROM DisposalReceptionFacility WHERE operationId = @disposalId;
+              SELECT * FROM DisposalTransferTanks WHERE operationId = @disposalId;
+              SELECT * FROM ResidueTransferDisposalTanks WHERE rtdId = @disposalId;
+            `);
+        
+          const transferTanks = result.recordsets[3] || [];
+          const disposalTanks = result.recordsets[4] || [];
+        
+          let tankIdentities = [];
+        
+          if (transferTanks.length > 0) {
+            for (const transfer of transferTanks) {
+              const tanksResult = await pool.request()
+                .input('transferId', sql.Int, transfer.transferId)
+                .query(`
+                  SELECT * FROM DisposalTransferTankList WHERE transferId = @transferId;
+                `);
+        
+              tankIdentities.push({
+                transferId: transfer.transferId,
+                tanks: tanksResult.recordset
+              });
+            }
+          }
+        
+          record.details = prettifyKeys(
+            flattenObject(formatDates({
+              operation: "Residue Transfer/Disposal",
+              ...mainRes.recordset[0],
+              mixedCargo: result.recordsets[0],
+              otherMethod: result.recordsets[1],
+              receptionFacility: result.recordsets[2],
+              transferTanks,
+              tanksIdentity: tankIdentities,
+              disposalTanks
+            }))
+          );
+        
+          console.log(record);
+        }
+        
+        else if (record.CrudeOilWashing_id != null) {
+          const mainRes = await pool
+            .request()
+            .input("orb2Id", sql.Int, record.CrudeOilWashing_id)
+            .query(`SELECT * FROM CrudeOilWashing WHERE operationId = @orb2Id`);
+          delete mainRes.recordset[0].operationId;
+          const mainData = mainRes.recordset[0];
+          mainData.washingPattern = Boolean(mainData.washingPattern);
+          if (mainData) {
+            const formattedData = formatDates(mainData);
+            const flattenedData = flattenObject(formattedData);
+            const prettyData = prettifyKeys(flattenedData);
+            record.details = prettyData;
+          }
+        }
+        
+          
+  
+        else if (record.AccidentalDischarge_id != null) {
+          const mainRes = await pool
+            .request()
+            .input("orb2Id", sql.Int, record.AccidentalDischarge_id)
+            .query("SELECT * FROM AccidentalDischarge WHERE operationId = @orb2Id");
+          delete mainRes.recordset[0].operationId;
+          record.details = prettifyKeys(
+            flattenObject(formatDates({
+              operation: "Accidental Discharge",
+              ...mainRes.recordset[0],
+            })
+          ));
+        }
+  
+        else if (record.ReallocationBallastWater_id != null) {
+          const mainRes = await pool
+            .request()
+            .input("orb2Id", sql.Int, record.ReallocationBallastWater_id)
+            .query("SELECT * FROM ReallocationBallastWater WHERE operationId = @orb2Id");
+          delete mainRes.recordset[0].operationId;
+          record.details = prettifyKeys(
+            flattenObject(formatDates({
+             
+              ...mainRes.recordset[0],
+            })
+          ));
+        }
+  
+        else if (record.AdditionalProcedures_id != null) {
+          const mainRes = await pool
+            .request()
+            .input("orb2Id", sql.Int, record.AdditionalProcedures_id)
+            .query("SELECT * FROM AdditionalProcedures WHERE operationId = @orb2Id");
+  delete mainRes.recordset[0].operationId;
+          record.details = prettifyKeys(
+            flattenObject(formatDates({
+              
+              ...mainRes.recordset[0],
+            })
+          ));
+        }
+  
+        else if (record.OilDischargeMonitoringSystem_id != null) {
+          const mainRes = await pool
+            .request()
+            .input("orb2Id", sql.Int, record.OilDischargeMonitoringSystem_id)
+            .query("SELECT * FROM OilDischargeMonitoringSystem WHERE operationId = @orb2Id");
+            delete mainRes.recordset[0].operationId;
+          record.details = prettifyKeys(
+            flattenObject(formatDates({
+              
+              ...mainRes.recordset[0],
+            })
+          ));
+        }
+  
+        else {
+          record.details = { Operation: "Unknown or unhandled operation" };
+        }
+      }
+      delete records.recordId;
+      
+      return records;
+    } catch (err) {
+      console.error(" Error in fetchOperation:", err);
+      throw err;
+    }
+}
+  
+async function insertReallocationBallastWater(recordName, data, user, vessel) {
     let transaction;
 
     try {
-        console.log("Data from front-end:", data);
 
-        // Validate recordId
-        if (!recordId || isNaN(recordId)) {
+        if (!recordName) {
             throw new Error("Invalid recordId.");
         }
 
@@ -346,17 +779,45 @@ async function insertReallocationBallastWater(recordId, data) {
 
         // SQL Insert
         const insertQuery = `
-            INSERT INTO ReallocationBallastWater (recordId, reason)
-            VALUES (@recordId, @reason);
+            INSERT INTO ReallocationBallastWater ( reason)
+            VALUES ( @reason);
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+            
             .input("reason", sql.NVarChar(sql.MAX), reasonForReallocation.trim())
             .query(insertQuery);
 
         const operationId = result.recordset[0].operationId;
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verficationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('ReallocationBallastWater_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          ReallocationBallastWater_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @ReallocationBallastWater_id, @operationName
+        )
+      `);
         console.log("Inserted ReallocationBallastWater with operationId:", operationId);
 
         await transaction.commit();
@@ -375,14 +836,14 @@ async function insertReallocationBallastWater(recordId, data) {
     }
 }
 
-async function insertBallastWaterDischargeTORF(recordId, data) {
+async function insertBallastWaterDischargeTORF(recordName, data, user, vessel) {
     let transaction;
 
     try {
-        console.log("Data from front-end:", data);
+       
 
         // Validate recordId
-        if (!recordId || isNaN(recordId)) {
+        if (!recordName) {
             throw new Error("Invalid recordId.");
         }
 
@@ -419,20 +880,48 @@ async function insertBallastWaterDischargeTORF(recordId, data) {
         // Insert Query
         const insertQuery = `
             INSERT INTO BallastWaterDischargeReception 
-                (recordId, portName, receptionFacility, totalQuantityDischarged)
+                ( portName, receptionFacility, totalQuantityDischarged)
             VALUES 
-                (@recordId, @portName, @receptionFacility, @totalQuantityDischarged);
+                ( @portName, @receptionFacility, @totalQuantityDischarged);
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+            
             .input("portName", sql.NVarChar(255), portOfDischarge.trim())
             .input("receptionFacility", sql.NVarChar(255), receptionFacility.trim())
             .input("totalQuantityDischarged", sql.Decimal(10, 2), validateDecimal(totalQuantityDischarged_m3))
             .query(insertQuery);
 
         const operationId = result.recordset[0].operationId;
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verficationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('BallastWaterDischargeReception_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          BallastWaterDischargeReception_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @BallastWaterDischargeReception_id, @operationName
+        )
+      `);
         console.log("Inserted BallastWaterDischargeReception with operationId:", operationId);
 
         await transaction.commit();
@@ -451,14 +940,14 @@ async function insertBallastWaterDischargeTORF(recordId, data) {
     }
 }
 
-async function insertLoadingBallastWater(recordId, data) {
+async function insertLoadingBallastWater(recordName, data, user, vessel) {
     let transaction;
 
     try {
-        console.log("Data from front-end:", data);
+        
 
         // Validate recordId
-        if (!recordId || isNaN(recordId)) {
+        if (!recordName) {
             throw new Error("Invalid recordId.");
         }
 
@@ -491,19 +980,47 @@ async function insertLoadingBallastWater(recordId, data) {
 
         // Insert into LoadingBallastWater table
         const insertDischargeQuery = `
-            INSERT INTO LoadingBallastWater (recordId, positionOfShip, totalQuantityM3, remarks)
-            VALUES (@recordId, @positionOfShip, @totalQuantityM3, @remarks);
+            INSERT INTO LoadingBallastWater ( positionOfShip, totalQuantityM3, remarks)
+            VALUES ( @positionOfShip, @totalQuantityM3, @remarks);
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+            
             .input("positionOfShip", sql.NVarChar(255), positionOfShip.trim())
             .input("totalQuantityM3", sql.Decimal(10, 2),validateDecimal(quantityOfBallast))
             .input("remarks", sql.NVarChar(sql.MAX), remarks.trim())
             .query(insertDischargeQuery);
 
         const operationId = result.recordset[0].operationId;
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verficationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('LoadingBallastWater_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          LoadingBallastWater_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @LoadingBallastWater_id, @operationName
+        )
+      `);
         console.log("Inserted LoadingBallastWater with operationId:", operationId);
 
         // Insert into LoadingBallastWater_Tanks table
@@ -535,15 +1052,15 @@ async function insertLoadingBallastWater(recordId, data) {
     }
 }
 
-async function insertAdditionalProcedure(recordId, data) {
+async function insertAdditionalProcedure(recordName, data, user, vessel) {
     let transaction;
 
     try {
-        console.log("Data from front-end:", data);
+        
 
        
-        if (!recordId || isNaN(recordId)) {
-            throw new Error("Invalid recordId.");
+        if (!recordName) {
+            throw new Error("Invalid operation type provided.");
         }
 
       
@@ -565,18 +1082,46 @@ async function insertAdditionalProcedure(recordId, data) {
 
         
         const insertQuery = `
-            INSERT INTO AdditionalProcedures (recordId, additionalProcedures, generalRemarks)
-            VALUES (@recordId, @additionalProcedures, @generalRemarks);
+            INSERT INTO AdditionalProcedures ( additionalProcedures, generalRemarks)
+            VALUES ( @additionalProcedures, @generalRemarks);
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+            
             .input("additionalProcedures", sql.NVarChar(sql.MAX), additionalOperationalProcedures.trim())
             .input("generalRemarks", sql.NVarChar(sql.MAX), generalRemarks.trim())
             .query(insertQuery);
 
         const operationId = result.recordset[0].operationId;
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verficationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('AdditionalProcedures_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          AdditionalProcedures_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @AdditionalProcedures_id, @operationName
+        )
+      `);
         console.log("Inserted AdditionalProcedures with operationId:", operationId);
 
         await transaction.commit();
@@ -595,14 +1140,14 @@ async function insertAdditionalProcedure(recordId, data) {
     }
 }
 
-async function insertAccidentOtherDischarge(recordId, data) {
+async function insertAccidentOtherDischarge(recordName, data, user, vessel) {
     let transaction;
 
     try {
-        console.log("Data from front-end:", data);
+       
 
-        if (!recordId || isNaN(recordId)) {
-            throw new Error("Invalid recordId.");
+        if (!recordName) {
+            throw new Error("Invalid operation type provided.");
         }
 
         const {
@@ -664,7 +1209,7 @@ async function insertAccidentOtherDischarge(recordId, data) {
 
         const insertQuery = `
             INSERT INTO AccidentalDischarge (
-                recordId, 
+                 
                 timeOfOccurrence,
                 portAtTimeOfOccurrence,
                 positionOfShip,
@@ -674,7 +1219,7 @@ async function insertAccidentOtherDischarge(recordId, data) {
                 reasons,
                 generalRemarks
             ) VALUES (
-                @recordId,
+                
                 @timeOfOccurrence,
                 @port,
                 @position,
@@ -688,7 +1233,7 @@ async function insertAccidentOtherDischarge(recordId, data) {
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+           
             .input("timeOfOccurrence", sql.Time(7), sqlTime)
             .input("port", sql.NVarChar(100), portAtTimeOfOccurrence.trim())
             .input("position", sql.NVarChar(255), positionAtTimeOfOccurrence.trim())
@@ -700,6 +1245,34 @@ async function insertAccidentOtherDischarge(recordId, data) {
             .query(insertQuery);
 
         const operationId = result.recordset[0].operationId;
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verficationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('AccidentalDischarge_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          AccidentalDischarge_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @AccidentalDischarge_id, @operationName
+        )
+      `);
         console.log("Inserted AccidentalDischarge with operationId:", operationId);
 
         await transaction.commit();
@@ -718,13 +1291,13 @@ async function insertAccidentOtherDischarge(recordId, data) {
     }
 }
 
-async function insertOilDischargeMonitoringSystem(recordId, data) {
+async function insertOilDischargeMonitoringSystem(recordName, data, user, vessel) {
     let transaction;
 
     try {
-        console.log("Data from front-end:", data);
+        
 
-        if (!recordId || isNaN(recordId)) {
+        if (!recordName) {
             throw new Error("Invalid recordId.");
         }
 
@@ -762,20 +1335,48 @@ async function insertOilDischargeMonitoringSystem(recordId, data) {
 
         const insertQuery = `
             INSERT INTO OilDischargeMonitoringSystem 
-            (recordId, timeOfSystemFailure, timeSystemOperational, reasonForFailure)
+            ( timeOfSystemFailure, timeSystemOperational, reasonForFailure)
             VALUES 
-            (@recordId, @timeOfSystemFailure, @timeSystemOperational, @reasonForFailure);
+            ( @timeOfSystemFailure, @timeSystemOperational, @reasonForFailure);
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+            
             .input("timeOfSystemFailure", sql.Time(7), failTime)
             .input("timeSystemOperational", sql.Time(7), opTime)
             .input("reasonForFailure", sql.NVarChar(sql.MAX), reasonForFailure.trim())
             .query(insertQuery);
 
         const operationId = result.recordset[0].operationId;
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verficationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('OilDischargeMonitoringSystem_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          OilDischargeMonitoringSystem_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @OilDischargeMonitoringSystem_id, @operationName
+        )
+      `);
         console.log("Inserted OilDischargeMonitoringSystem with operationId:", operationId);
 
         await transaction.commit();
@@ -794,13 +1395,13 @@ async function insertOilDischargeMonitoringSystem(recordId, data) {
     }
 }
 
-async function insertDischargeOfDedicatedCBT(recordId, data) {
+async function insertDischargeOfDedicatedCBT(recordName, data, user, vessel) {
     let transaction;
 
     try {
         console.log("Data from front-end:", data);
 
-        if (!recordId || isNaN(recordId)) throw new Error("Invalid recordId.");
+        if (!recordName) throw new Error("Invalid operation type provided.");
 
         const {
             positionStart,
@@ -869,16 +1470,16 @@ async function insertDischargeOfDedicatedCBT(recordId, data) {
 
         const insertQuery = `
             INSERT INTO CbtBallastDischarge 
-            (recordId, posStart, timeStart, posCompletion, timeCompletion, qtySea, qtyReception, portReception, 
+            ( posStart, timeStart, posCompletion, timeCompletion, qtySea, qtyReception, portReception, 
              oilContamination, monitoredByOilMeter, valveClosePos, valveCloseTime)
             VALUES 
-            (@recordId, @posStart, @timeStart, @posCompletion, @timeCompletion, @qtySea, @qtyReception, @portReception,
+            ( @posStart, @timeStart, @posCompletion, @timeCompletion, @qtySea, @qtyReception, @portReception,
              @oilContamination, @monitoredByOilMeter, @valveClosePos, @valveCloseTime);
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+            
             .input("posStart", sql.NVarChar(255), positionStart.trim())
             .input("timeStart", sql.Time(7), toSQLTime(timeStart))
             .input("posCompletion", sql.NVarChar(255), positionCompletion.trim())
@@ -893,6 +1494,34 @@ async function insertDischargeOfDedicatedCBT(recordId, data) {
             .query(insertQuery);
 
         const operationId = result.recordset[0].operationId;
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verficationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('CbtBallastDischarge_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          CbtBallastDischarge_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @CbtBallastDischarge_id, @operationName
+        )
+      `);
         console.log("Inserted CbtBallastDischarge with operationId:", operationId);
 
         // Insert tanks
@@ -924,13 +1553,13 @@ async function insertDischargeOfDedicatedCBT(recordId, data) {
     }
 }
 
-async function insertCleanBallastContainedInCargoTanks(recordId, data) {
+async function insertCleanBallastContainedInCargoTanks(recordName, data, user, vessel) {
     let transaction;
 
     try {
-        console.log("Data from front-end:", data);
+        
 
-        if (!recordId || isNaN(recordId)) throw new Error("Invalid recordId.");
+        if (!recordName ) throw new Error("Invalid recordId.");
 
         const {
             positionStart,
@@ -966,13 +1595,13 @@ async function insertCleanBallastContainedInCargoTanks(recordId, data) {
 
         const insertDischargeQuery = `
             INSERT INTO CleanBallastDischarge 
-            (recordId, positionStart, positionCompletion, tankEmptyCompletion, regularCheck)
-            VALUES (@recordId, @positionStart, @positionCompletion, @tankEmptyCompletion, @regularCheck);
+            ( positionStart, positionCompletion, tankEmptyCompletion, regularCheck)
+            VALUES ( @positionStart, @positionCompletion, @tankEmptyCompletion, @regularCheck);
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+            
             .input("positionStart", sql.NVarChar(255), positionStart.trim())
             .input("positionCompletion", sql.NVarChar(255), positionCompletion.trim())
             .input("tankEmptyCompletion", sql.Bit, tanksEmptyOnCompletion === "Yes" ? 1 : 0)
@@ -981,7 +1610,34 @@ async function insertCleanBallastContainedInCargoTanks(recordId, data) {
 
         const operationId = result.recordset[0].operationId;
         console.log("Inserted CleanBallastDischarge with operationId:", operationId);
-
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verficationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('CleanBallastDischarge_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          CleanBallastDischarge_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @CleanBallastDischarge_id, @operationName
+        )
+      `);
         for (const tank of dischargedTanks) {
             if (typeof tank === "string" && tank.trim() !== "") {
                 await transaction.request()
@@ -1011,13 +1667,13 @@ async function insertCleanBallastContainedInCargoTanks(recordId, data) {
 }
 
 
-async function insertCTDR(recordId, data) {
+async function insertCTDR(recordName, data, user, vessel) {
     let transaction;
 
     try {
-        console.log("Data from front-end:", data);
-
-        if (!recordId || isNaN(recordId)) throw new Error("Invalid recordId.");
+        
+      console.log(data);
+        if (!recordName) throw new Error("Invalid operation type provided.");
         if (!data.method_of_disposal) throw new Error("Method of disposal is required.");
         if (!data.dynamic_data) throw new Error("Dynamic data section is missing.");
 
@@ -1030,15 +1686,56 @@ async function insertCTDR(recordId, data) {
 
         // Insert into ResidueTransferDisposal
         const disposalResult = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+            
             .input("methodOfDisposal", sql.NVarChar(255), method)
+            .input('qt',sql.Decimal(10,3),data.transferred_quantity)
             .query(`
-                INSERT INTO ResidueTransferDisposal (recordId, methodOfDisposal)
-                VALUES (@recordId, @methodOfDisposal);
+                INSERT INTO ResidueTransferDisposal ( methodOfDisposal,QuantityTransferred)
+                VALUES ( @methodOfDisposal,@qt);
                 SELECT SCOPE_IDENTITY() AS operationId;
             `);
 
         const operationId = disposalResult.recordset[0].operationId;
+        for(const tank of data.tank_identity)
+        {
+          const result3 = await transaction
+          .request()
+          .input('rtdId',sql.Int,operationId)
+          .input('tankName',sql.NVarChar,tank)
+          
+          .query(`
+            INSERT INTO ResidueTransferDisposalTanks(tankName,rtdId) VALUES(@tankName,@rtdId);
+            `);
+      
+        }
+            const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verficationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('ResidueTransferDisposal_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          ResidueTransferDisposal_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @ResidueTransferDisposal_id, @operationName
+        )
+      `);
         console.log("Inserted ResidueTransferDisposal with operationId:", operationId);
          function validateDecimal(value, precision = 10, scale = 2) 
          {
@@ -1155,14 +1852,13 @@ async function insertCTDR(recordId, data) {
     }
 }
 
-async function insertDischargeOfSlopTanks(recordId, data) {
+async function insertDischargeOfSlopTanks(recordName, data, user, vessel) {
     let transaction;
 
 try {
-        console.log("Data from front-end:", data);
 
-        if (!recordId || isNaN(recordId)) {
-            throw new Error("Invalid recordId.");
+        if (!recordName) {
+            throw new Error("Invalid operation type provided.");
         }
 
         // Field validations
@@ -1218,14 +1914,14 @@ try {
 
         const dischargeQuery = `
             INSERT INTO SlopTankDischarge 
-                (recordId, settlingLastResidues, settlingLastDischarge, rateOfDischarge, ullageCompletion, valvesClosed)
+                ( settlingLastResidues, settlingLastDischarge, rateOfDischarge, ullageCompletion, valvesClosed)
             VALUES 
-                (@recordId, @settlingLastResidues, @settlingLastDischarge, @rateOfDischarge, @ullageCompletion, @valvesClosed);
+                ( @settlingLastResidues, @settlingLastDischarge, @rateOfDischarge, @ullageCompletion, @valvesClosed);
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+          
             .input("settlingLastResidues", sql.Time(7), formatToSQLTime(settling_last_residues))
             .input("settlingLastDischarge", sql.Time(7), formatToSQLTime(settling_last_discharge))
             .input("rateOfDischarge", sql.Decimal(10, 2), parseFloat(rate_of_discharge))
@@ -1234,6 +1930,36 @@ try {
             .query(dischargeQuery);
 
         const operationId = result.recordset[0].operationId;
+
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verficationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('SlopTankDischarge_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          SlopTankDischarge_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @SlopTankDischarge_id, @operationName
+        )
+      `);
+        
         console.log("Inserted SlopTankDischarge with operationId:", operationId);
 
         // Insert Tank Data
@@ -1266,15 +1992,15 @@ try {
     }
 }
 
-async function insertDischargeOfDirtyBallast(recordId, data) {
+async function insertDischargeOfDirtyBallast(recordName, data, user, vessel) {
     let transaction;
 
     try {
-        console.log("Data from front-end:", data);
+        
 
         // Validate recordId
-        if (!recordId || isNaN(recordId)) {
-            throw new Error("Invalid recordId provided.");
+        if (!recordName) {
+            throw new Error("Invalid operation type provided.");
         }
 
         // Validate required fields
@@ -1326,16 +2052,16 @@ async function insertDischargeOfDirtyBallast(recordId, data) {
         // Insert into `DirtyBallastDischarge`
         const dischargeQuery = `
             INSERT INTO DirtyBallastDischarge 
-            (recordId, dischargeStartTime, dischargeStartPosition, dischargeCompleteTime, dischargeCompletePosition, 
+            ( dischargeStartTime, dischargeStartPosition, dischargeCompleteTime, dischargeCompletePosition, 
              shipSpeedKnots, quantityDischargedM3, monitoringSystem, regularCheckup, shorePort, shoreQuantityM3) 
             VALUES 
-            (@recordId, @dischargeStartTime, @dischargeStartPosition, @dischargeCompleteTime, @dischargeCompletePosition, 
+            (@dischargeStartTime, @dischargeStartPosition, @dischargeCompleteTime, @dischargeCompletePosition, 
              @shipSpeedKnots, @quantityDischargedM3, @monitoringSystem, @regularCheckup, @shorePort, @shoreQuantityM3);
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+            
             .input("dischargeStartTime", sql.Time(7), formatToSQLTime(data.timeStart))
             .input("dischargeStartPosition", sql.NVarChar(255), data.positionStart)
             .input("dischargeCompleteTime", sql.Time(7), formatToSQLTime(data.timeComplete))
@@ -1350,7 +2076,34 @@ async function insertDischargeOfDirtyBallast(recordId, data) {
 
         const operationId = result.recordset[0].operationId;
         console.log("Inserted DirtyBallastDischarge with Operation ID:", operationId);
-
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verficationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('DirtyBallastDischarge_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          DirtyBallastDischarge_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @DirtyBallastDischarge_id, @operationName
+        )
+      `);
         // Insert Tank Identities into `DirtyBallastDischargeTanks`
         for (const tankIdentity of data.tankIdentities) {
             if (typeof tankIdentity === "string" && tankIdentity.trim() !== "") {
@@ -1406,21 +2159,21 @@ async function insertDischargeOfDirtyBallast(recordId, data) {
 }
 }
 
-async function insertCleaningOfCargoTanks(recordId, data) {
+async function insertCleaningOfCargoTanks(recordName, data, user, vessel) {
     let transaction;
 
     try {
-        console.log("Data from front-end:", data);
+        
 
-        if (!recordId || isNaN(recordId)) {
-            throw new Error("Invalid recordId provided.");
+        if (!recordName) {
+            throw new Error("Invalid operation type provided.");
         }
 
         if (!data.portOrPosition || typeof data.portOrPosition !== "string" || data.portOrPosition.trim() === "") {
             throw new Error("Port or Ship Position is required.");
         }
 
-        if (!data.durationCleaning || isNaN(data.durationCleaning)) {
+        if (!data.durationCleaning) {
             throw new Error("Duration of Cleaning is required and must be a valid number.");
         }
 
@@ -1432,25 +2185,7 @@ async function insertCleaningOfCargoTanks(recordId, data) {
             throw new Error("Tanks Washing Transferred To is required.");
         }
 
-        if (!data.quantityTransferred || isNaN(data.quantityTransferred) || Number(data.quantityTransferred) < 0) {
-            throw new Error("Quantity Transferred must be a valid non-negative number.");
-        }
-
-        if (!data.totalQuantity || isNaN(data.totalQuantity) || Number(data.totalQuantity) < 0) {
-            throw new Error("Total Quantity must be a valid non-negative number.");
-        }
-
-        if (!data.portRF || typeof data.portRF !== "string" || data.portRF.trim() === "") {
-            throw new Error("Port RF is required.");
-        }
-
-        if (!data.totalQuantityRF || isNaN(data.totalQuantityRF) || Number(data.totalQuantityRF) < 0) {
-            throw new Error("Quantity RF must be a valid non-negative number.");
-        }
-
-        if (!Array.isArray(data.tanks) || data.tanks.length === 0) {
-            throw new Error("At least one valid tank identity is required.");
-        }
+        
 
         function validateDecimal(value, precision = 10, scale = 2) {
             if (typeof value !== "number" || isNaN(value)) return 0.0;
@@ -1476,33 +2211,90 @@ async function insertCleaningOfCargoTanks(recordId, data) {
 
         const query = `
             INSERT INTO CargoTankCleaning 
-            (recordId, portOrShipPosition, durationOfCleaning, methodOfCleaning, tanksWashingTransferredTo, quantityTransferred, 
-             totalQuantity, portRf, quantityRf, createdAt)
+            ( portOrShipPosition, durationOfCleaning, methodOfCleaning, tanksWashingTransferredTo,  createdAt)
             VALUES 
-            (@recordId, @portOrShipPosition, @durationOfCleaning, @methodOfCleaning, @tanksWashingTransferredTo, @quantityTransferred, 
-             @totalQuantity, @portRf, @quantityRf, GETDATE());
+            ( @portOrShipPosition, @durationOfCleaning, @methodOfCleaning, @tanksWashingTransferredTo, GETDATE());
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+            
             .input("portOrShipPosition", sql.NVarChar(255), data.portOrPosition.trim())
             .input("durationOfCleaning", sql.Time(7), formatToSQLTime(`${data.durationCleaning}:00`)) 
             .input("methodOfCleaning", sql.NVarChar(100), data.methodCleaning.trim())
-            .input("tanksWashingTransferredTo", sql.NVarChar(100), data.TWT.trim())
-            .input("quantityTransferred", sql.Decimal(10, 2), validateDecimal(data.quantityTransferred))
-            .input("totalQuantity", sql.Decimal(10, 2), validateDecimal(data.totalQuantity))
-            .input("portRf", sql.NVarChar(150), data.portRF.trim())
-            .input("quantityRf", sql.Decimal(10, 2), validateDecimal(data.totalQuantityRF))
-            .query(query);
+            .input("tanksWashingTransferredTo", sql.NVarChar(100), data.TWT.trim() === 'rf' ? 'Reception Facilities':'Slop/Cargo Tank(s)')
+           .query(query);
 
         const operationId = result.recordset[0].operationId;
         console.log("CargoTankCleaning Operation ID created:", operationId);
-
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verficationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('CargoTankCleaning_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,  verificationStatus, verificationRemarks,
+          CargoTankCleaning_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,  @verificationStatus, @verficationRemarks,
+          @CargoTankCleaning_id, @operationName
+        )
+      `);
+      if (data.TWT === 'slop') {
+        
+    
+        const query = `
+            INSERT INTO slopCargoTanks
+            (operationId, tankName, quantityTransferred, totalQuantity)
+            VALUES
+            (@operationId, @tankName, @quantityTransferred, @totalQuantity);
+            SELECT SCOPE_IDENTITY() AS operationId;
+        `;
+    
+        await transaction.request()
+            .input("operationId", sql.Int, operationId)
+            .input("tankName", sql.NVarChar(250), data.slopTankName)
+            .input("quantityTransferred", sql.Decimal(10, 3), data.quantityTransferred)
+            .input("totalQuantity", sql.Decimal(10, 3), data.totalQuantity)
+            .query(query);
+    
+    } else if (data.TWT === 'rf') {
+        
+        
+    
+        const query = `
+            INSERT INTO ReceptionFacilities
+            (operationId, port, quantity)
+            VALUES
+            (@operationId, @portName, @quantity);
+            SELECT SCOPE_IDENTITY() AS operationId;
+        `;
+    
+        await transaction.request()
+            .input("operationId", sql.Int, operationId)
+            .input("portName", sql.NVarChar(250), data.portRF)
+            .input("quantity", sql.Decimal(10, 3), data.quantityRF)
+            .query(query);
+    }
+    
         for (const tankIdentity of data.tanks) {
             if (typeof tankIdentity === "string" && tankIdentity.trim() !== "") {
-                await transaction.request()
-                    .input("operationId", sql.Int, operationId)
+                const request = await transaction.request();
+                    await request.input("operationId", sql.Int, operationId)
                     .input("tankIdentity", sql.NVarChar(100), tankIdentity.trim())
                     .query(`
                         INSERT INTO CargoTankCleaningTanks (operationId, tankIdentity)
@@ -1514,7 +2306,7 @@ async function insertCleaningOfCargoTanks(recordId, data) {
         await transaction.commit();
         console.log("Transaction committed successfully.");
 
-        return { message: `Cargo Tank Cleaning operation submitted successfully.`, operationId };
+        return { message: `Cargo Tank Cleaning operation submitted successfully.`};
 
     } catch (error) {
         console.error("Error in insertCleaningOfCargoTanks:", error);
@@ -1530,16 +2322,16 @@ async function insertCleaningOfCargoTanks(recordId, data) {
     }
 }
 
-async function insertCleanBallastingTanks(recordId, data) {
+async function insertCleanBallastingTanks(recordName, data, user, vessel) {
     let transaction;
 
     try {
-        console.log("Data from front-end:", data);
-
-        // Validate `recordId`
-        if (!recordId || isNaN(recordId)) {
-            throw new Error("Invalid recordId provided.");
+        if(!recordName)
+        {
+            throw new Error("Invalid operation type provided");
+            
         }
+     
 
         // Validate required fields
         if (!data.port || typeof data.port !== "string" || data.port.trim() === "") {
@@ -1598,29 +2390,59 @@ async function insertCleanBallastingTanks(recordId, data) {
 
         // Insert into `CbtBallasting` Table
         const query = `
-            INSERT INTO CbtBallasting (recordId, port, positionFlushed, oilyWaterQty, cleanBallastQty, valveTime, valvePosition)
-            VALUES (@recordId, @port, @positionFlush, @oilyWaterQty, @cleanBallastQty, @valveTime, @valvePosition);
+            INSERT INTO CbtBallasting (positionWhenAdditionalBallastWasTaken,positionWhenPortOrFlushWaterTakenToCBT, port, positionFlushed, oilyWaterQty, cleanBallastQty, valveTime, valvePosition)
+            VALUES (@positionAdditionalBallast,@positionPortBallast, @port, @positionFlush, @oilyWaterQty, @cleanBallastQty, @valveTime, @valvePosition);
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+            
             .input("port", sql.NVarChar(150), data.port.trim())
             .input("positionFlush", sql.NVarChar(255), data.positionFlush.trim())
             .input("oilyWaterQty", sql.Decimal(10, 2), validateDecimal(data.oilyWaterQty))
             .input("cleanBallastQty", sql.Decimal(10, 2), validateDecimal(data.cleanBallastQty))
             .input("valveTime", sql.Time(7), formatToSQLTime(data.valveTime))
             .input("valvePosition", sql.NVarChar(255), data.valvePosition.trim())
+            .input("positionPortBallast",sql.NVarChar(255),data.positionPortBallast.trim())
+            .input("positionAdditionalBallast",sql.NVarChar,data.positionAdditionalBallast)
             .query(query);
 
         const operationId = result.recordset[0].operationId;
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verificationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verificationRemarks', sql.NVarChar(255), verificationRemarks)
+      .input('CbtBallasting_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,  verificationStatus, verificationRemarks,
+          CbtBallasting_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,  @verificationStatus, @verificationRemarks,
+          @CbtBallasting_id, @operationName
+        )
+      `);
         console.log("CbtBallasting Operation ID created:", operationId);
 
         // Insert Tank Identities into `CbtBallastingTanks`
         for (const tankIdentity of data.tanks) {
             if (typeof tankIdentity === "string" && tankIdentity.trim() !== "") {
-                await transaction.request()
-                    .input("operationId", sql.Int, operationId)
+                const request = await transaction.request();
+                
+                await request.input("operationId", sql.Int, operationId)
                     .input("tankIdentity", sql.NVarChar(100), tankIdentity.trim())
                     .query(`
                         INSERT INTO CbtBallastingTanks (operationId, tankIdentity)
@@ -1628,6 +2450,20 @@ async function insertCleanBallastingTanks(recordId, data) {
                     `);
             }
         }
+
+        //Insert Slop Tank Identities into 'SlopTankCbtBallasting'
+        for (const tankIdentity of data.slopTankIdentities) {
+          if (typeof tankIdentity === "string" && tankIdentity.trim() !== "") {
+              const request = await transaction.request();
+                  await request.input("operationId", sql.Int, operationId)
+                  .input("tankName", sql.NVarChar(100), tankIdentity.trim())
+                  .query(`
+                      INSERT INTO SlopTankCbtBallasting (operationId, tankName)
+                      VALUES (@operationId, @tankName);
+                  `);
+          }
+      }
+
 
         // Commit the transaction
         await transaction.commit();
@@ -1647,20 +2483,21 @@ async function insertCleanBallastingTanks(recordId, data) {
         throw new Error("Database operation failed: " + error.message);
     } finally {
        
-            transaction.release(); 
+      if (transaction && transaction.connection) {
+        transaction.connection.close(); 
+    }
          
     }
 }
 
-async function insertBallastingOfCargoTanks(recordId, data) {
+async function insertBallastingOfCargoTanks(recordName, data,user, vessel) {
     let transaction;
 
     try {
-        console.log("Data from front-end:", data);
-
-        // Validate `recordId`
-        if (!recordId || isNaN(recordId)) {
-            throw new Error("Invalid recordId provided.");
+        
+        // Validate `recordName`
+        if (!recordName) {
+            throw new Error("Invalid operation type provided.");
         }
 
         // Validate `startBallastingPlace` and `endBallastingPlace`
@@ -1685,38 +2522,76 @@ async function insertBallastingOfCargoTanks(recordId, data) {
 
         // Insert into Ballasting Table
         const query = `
-            INSERT INTO Ballasting (recordId, startBallastingPlace, endBallastingPlace)
-            VALUES (@recordId, @startBallasting, @endBallasting);
+            INSERT INTO Ballasting ( startBallastingPlace, endBallastingPlace)
+            VALUES ( @startBallasting, @endBallasting);
             SELECT SCOPE_IDENTITY() AS ballastingId;
         `;
-
+        function convertToSQLDateTime(datetimeLocalValue) {
+          if (!datetimeLocalValue) return null;
+      
+          const [date, time] = datetimeLocalValue.split('T');
+          
+          return `${date} ${time}:00`;
+      }
+      
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
+            
             .input("startBallasting", sql.NVarChar(150), data.startBallasting.trim())
             .input("endBallasting", sql.NVarChar(150), data.endBallasting.trim())
             .query(query);
 
-        const ballastingId = result.recordset[0].ballastingId;
-        console.log("Ballasting ID created:", ballastingId);
+        const operationId = result.recordset[0].ballastingId;
+        const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verificationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verifiedAt',sql.DateTime,new Date())
+      .input('verificationRemarks', sql.NVarChar(255), verificationRemarks)
+      .input('Ballasting_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          Ballasting_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verificationRemarks,
+          @Ballasting_id, @operationName
+        )
+      `);
+       
 
         // Insert Tank Identities into Ballasting_Tanks
-        for (const tankIdentity of data.tanks) {
-            if (typeof tankIdentity === "string" && tankIdentity.trim() !== "") {
+        for (const tank of data.tanks) {
+            
                 await transaction.request()
-                    .input("ballastingId", sql.Int, ballastingId)
-                    .input("tankIdentity", sql.NVarChar(100), tankIdentity.trim())
+                    .input("ballastingId", sql.Int, operationId)
+                    .input("tankIdentity", sql.NVarChar(100), tank.identity.trim())
+                    .input("startTime",sql.DateTime,convertToSQLDateTime(tank.startTime))
+                    .input("endTime",sql.DateTime,convertToSQLDateTime(tank.endTime))
+                    .input("quantity",sql.Decimal(10,3),tank.quantity)
                     .query(`
-                        INSERT INTO BallastingTanks (ballastingId, tankIdentity)
-                        VALUES (@ballastingId, @tankIdentity);
+                        INSERT INTO BallastingTanks (ballastingId, tankIdentity,quantity,startTime,endTime)
+                        VALUES (@ballastingId, @tankIdentity,@quantity,@startTime,@endTime);
                     `);
-            }
+            
         }
 
         // Commit transaction
         await transaction.commit();
         console.log("Transaction committed successfully.");
 
-        return { message: `Ballasting operation submitted successfully.`, ballastingId };
+        return { message: `Ballasting operation submitted successfully.` };
 
     } catch (error) {
         console.error("Error in insertBallastingOfCargoTanks:", error);
@@ -1736,12 +2611,12 @@ async function insertBallastingOfCargoTanks(recordId, data) {
     }
 }
 
-async function insertCrudeOilWashing(recordId, data) {
-    console.log("Data from front-end ", data);
-    if (!recordId) {
-        throw new Error("Invalid recordId provided.");
+async function insertCrudeOilWashing(recordName, data, user, vessel) {
+    
+    if (!recordName) {
+        throw new Error("Invalid operation type provided.");
     }
-    console.log(data, " from insert function");
+    
 
     if (!data.tanks || !Array.isArray(data.tanks) || data.tanks.length === 0) {
         throw new Error("Tanks data is required.");
@@ -1754,29 +2629,13 @@ async function insertCrudeOilWashing(recordId, data) {
         transaction = new sql.Transaction(await pool); 
         await transaction.begin();
         console.log("Transaction started...");
-
-        // Insert into `CrudeOilWashing`
-        const query = `
-            INSERT INTO CrudeOilWashing (recordId)
-            VALUES (@recordId);
-            SELECT SCOPE_IDENTITY() AS operationId;
-        `;
-
-        const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
-            .query(query);
-
-        const operationId = result.recordset[0].operationId;
-        console.log("Inserted CrudeOilWashing with Operation ID:", operationId);
-
-        // Insert tanks data inside the same transaction
-        await insertCrudeOilWashingTanks(transaction, operationId, data.tanks);
+        await insertCrudeOilWashingTanks(transaction, recordName, data.tanks,user,vessel);
 
         // Commit transaction
         await transaction.commit();
         console.log("Transaction committed successfully.");
 
-        return { message: `Crude Oil Washing submitted successfully. Rows affected: ${result.rowsAffected}` };
+        return { message: `Crude Oil Washing submitted successfully.` };
 
     } catch (error) {
         console.error("Error in insertCrudeOilWashing:", error);
@@ -1796,7 +2655,7 @@ async function insertCrudeOilWashing(recordId, data) {
     }
 }
 
-async function insertCrudeOilWashingTanks(transaction, operationId, tanks) {
+async function insertCrudeOilWashingTanks(transaction, recordName, tanks, user, vessel) {
     for (const tank of tanks) {
         const {
             tankIdentity,
@@ -1840,29 +2699,22 @@ async function insertCrudeOilWashingTanks(transaction, operationId, tanks) {
 
         const formattedStartTime = formatToSQLTime(startTimeWashing);
         const formattedEndTime = formatToSQLTime(endTimeWashing);
-
-        if (formattedStartTime >= formattedEndTime) {
-            throw new Error("Invalid washing time range.");
-        }
-
-        console.log("Formatted Start Time:", formattedStartTime);
-        console.log("Formatted End Time:", formattedEndTime);
-
         // SQL Insert Query
         const query = `
-            INSERT INTO CrudeOilWashing_Tanks (
-                operationId, tankIdentity, portOfWash, shipPosition, machinesInUse,
+            INSERT INTO CrudeOilWashing (
+                 tankIdentity, portOfWash, shipPosition, machinesInUse,
                 startTimeWashing, washingPattern, washingLinePressure, stopTimeWashing,
                 cleanlinessMethod, remarks
             ) VALUES (
-                @operationId, @tankIdentity, @portOfWash, @shipPosition, @machinesInUse,
+                 @tankIdentity, @portOfWash, @shipPosition, @machinesInUse,
                 @startTimeWashing, @washingPattern, @washingLinePressure, @stopTimeWashing,
                 @cleanlinessMethod, @remarks
             );
+            SELECT SCOPE_IDENTITY() AS operationId;
         `;
-
-        await transaction.request()
-            .input("operationId", sql.Int, operationId)
+        
+        const results = await transaction.request()
+            
             .input("tankIdentity", sql.NVarChar(100), tankIdentity)
             .input("portOfWash", sql.NVarChar(150), cowPort)
             .input("shipPosition", sql.NVarChar(150), cowShipPosition)
@@ -1874,12 +2726,43 @@ async function insertCrudeOilWashingTanks(transaction, operationId, tanks) {
             .input("cleanlinessMethod", sql.NVarChar(255), methodOfEstablishing)
             .input("remarks", sql.NVarChar(255), cowRemarks || null)
             .query(query);
+
+    const operationId = results.recordset[0].operationId;
+    const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verificationRemarks = `verified`;
+    const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedAt',sql.DateTime,new Date())
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verificationRemarks', sql.NVarChar(255), verificationRemarks)
+      .input('CrudeOilWashing_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          CrudeOilWashing_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verificationRemarks,
+          @CrudeOilWashing_id, @operationName
+        )
+      `);
+            
     }
 }
 
-async function insertLoadingOilCargo(recordId, data) {
-    if (!recordId) {
-        throw new Error("Invalid recordId provided.");
+async function insertLoadingOilCargo(recordName, data,user,vessel) {
+    if (!recordName) {
+        throw new Error("Invalid operation type provided.");
     }
 
     function validateDecimal(value, precision = 10, scale = 2) {
@@ -1889,7 +2772,11 @@ async function insertLoadingOilCargo(recordId, data) {
 
     const quantityAddedM3 = validateDecimal(data.quantityAdded);
     const totalContentOfTanksM3 = validateDecimal(data.totalContentOfTanks);
-
+    const approvedby = 1;
+    const approvalStatus = 0;
+    const verificationStatus =0;
+    const verifiedBy= 2;
+    const verificationRemarks = `verified`;
     let transaction;
     try {
         
@@ -1898,13 +2785,12 @@ async function insertLoadingOilCargo(recordId, data) {
         console.log("Transaction started...");
 
         const query = `
-            INSERT INTO LoadingOfOilCargo (recordId, placeOfLoading, typeOfOilLoaded, quantityAddedM3, totalContentOfTanksM3) 
-            VALUES (@recordId, @placeOfLoading, @typeOfOilLoaded, @quantityAddedM3, @totalContentOfTanksM3);
+            INSERT INTO LoadingOfOilCargo ( placeOfLoading, typeOfOilLoaded, quantityAddedM3, totalContentOfTanksM3) 
+            VALUES ( @placeOfLoading, @typeOfOilLoaded, @quantityAddedM3, @totalContentOfTanksM3);
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
             .input("placeOfLoading", sql.NVarChar(150), data.placeOfLoading)
             .input("typeOfOilLoaded", sql.NVarChar(100), data.typeOfOilLoaded)
             .input("quantityAddedM3", sql.Decimal(20, 2), quantityAddedM3)
@@ -1912,6 +2798,29 @@ async function insertLoadingOilCargo(recordId, data) {
             .query(query);
 
         const operationId = result.recordset[0].operationId;
+        const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verificationRemarks', sql.NVarChar(255), verificationRemarks)
+      .input('LoadingOfOilCargo_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,  verificationStatus,verifiedAt, verificationRemarks,
+          LoadingOfOilCargo_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,  @verificationStatus,@verifiedAt, @verificationRemarks,
+          @LoadingOfOilCargo_id, @operationName
+        )
+      `);
 
         if (data.tanks && data.tanks.length > 0) {
             await insertLoadingOilCargoTanks(transaction, operationId, data.tanks);
@@ -1919,7 +2828,7 @@ async function insertLoadingOilCargo(recordId, data) {
 
         await transaction.commit();
         console.log("Transaction committed successfully.");
-        return { message: `Loading Oil Cargo submitted successfully ${result.rowsAffected}` };
+        return { message: `Loading Of Oil Cargo submitted successfully` };
 
     } catch (error) {
         console.error("Error in insertLoadingOilCargo:", error);
@@ -1956,21 +2865,27 @@ async function insertLoadingOilCargoTanks(transaction, operationId, tanks) {
     }
 }
 
-async function insertInternalTransfer(recordId, data) {
+async function insertInternalTransfer(recordName, data,user,vessel) {
     let transaction;
 
     try {
-        console.log("RecordId ", recordId, "\nData ", data);
-
+        if (!recordName) {
+            throw new Error("Invalid operation type provided.");
+        }
         function validateDecimal(value, precision = 10, scale = 2) {
             if (typeof value !== "number" || isNaN(value)) return 0.0;
             return parseFloat(value.toFixed(scale));
         }
 
-        const quantityTransferredM3 = validateDecimal(data.quantityTransferred);
+        
         const totalQuantityOfTanksM3 = validateDecimal(data.totalQuantityTanks);
         const quantityRetainedM3 = validateDecimal(data.quantityRetained);
-
+        const quantityTransferred = validateDecimal(data.quantityTransferred);
+        const approvedby = 1;
+        const approvalStatus = 0;
+        const verificationStatus =0;
+        const verifiedBy= 2;
+        const verificationRemarks = `verified`;
         // Start transaction
          
         transaction = new sql.Transaction(await pool); 
@@ -1979,23 +2894,44 @@ async function insertInternalTransfer(recordId, data) {
 
         const query = `
             INSERT INTO InternalTransferOfOilCargo 
-            ( recordId, fromTank, toTank, quantityTransferredM3, totalQuantityOfTanksM3, tankEmptied, quantityRetainedM3) 
+            (   quantityTransferred, totalQuantityOfTanksM3, tankEmptied, quantityRetainedM3) 
             VALUES 
-            ( @recordId, @fromTank, @toTank, @quantityTransferredM3, @totalQuantityOfTanksM3, @tankEmptied, @quantityRetainedM3);
+            (   @quantityTransferred, @totalQuantityOfTanksM3, @tankEmptied, @quantityRetainedM3);
             SELECT SCOPE_IDENTITY() AS operationId;
         `;
 
         const result = await transaction.request()
-            .input("recordId", sql.Int, recordId)
-            .input("fromTank", sql.NVarChar(100), data.fromTank || "Unknown")
-            .input("toTank", sql.NVarChar(100), data.toTank || "Unknown")
-            .input("quantityTransferredM3", sql.Decimal(20, 2), quantityTransferredM3)
+            .input("quantityTransferred", sql.Decimal(20, 2), quantityTransferred)
             .input("totalQuantityOfTanksM3", sql.Decimal(20, 2), totalQuantityOfTanksM3)
             .input("tankEmptied", sql.NVarChar(10), data.tankEmptied || "No")
-            .input("quantityRetainedM3", sql.Decimal(20, 2), quantityRetainedM3)
+            .input("quantityRetainedM3", sql.Decimal(10, 2), quantityRetainedM3 || 0.0)
             .query(query);
 
         const operationId = result.recordset[0].operationId;
+
+        const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verificationRemarks', sql.NVarChar(255), verificationRemarks)
+      .input('InternalTransferOfOilCargo_id', sql.Int, operationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          InternalTransferOfOilCargo_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verificationRemarks,
+          @InternalTransferOfOilCargo_id, @operationName
+        )
+      `);
 
         // Insert related tank entries
         if (data.tanks && data.tanks.length > 0) {
@@ -2028,13 +2964,15 @@ async function insertInternalTransferTanks(transaction, operationId, tanks) {
     for (const tank of tanks) {
         try {
             const query = `
-                INSERT INTO InternalTransfer_Tanks (operationId, tankIdentity) 
-                VALUES (@operationId, @tankIdentity);
+                INSERT INTO InternalTransfer_Tanks (operationId, tankIdentity,tankRole,tankQuantity) 
+                VALUES (@operationId, @tankIdentity,@tankRole,@tankQuantity);
             `;
 
             await transaction.request()
                 .input("operationId", sql.Int, operationId)
-                .input("tankIdentity", sql.NVarChar(100), tank)
+                .input("tankIdentity", sql.NVarChar(100), tank.tankIdentity)
+                .input("tankRole", sql.NVarChar(5), tank.tankRole)
+                .input("tankQuantity", sql.Decimal(10,3), tank.tankQuantity)
                 .query(query);
 
         } catch (error) {
@@ -2044,20 +2982,24 @@ async function insertInternalTransferTanks(transaction, operationId, tanks) {
     }
 }
 
-async function insertUnloadingCargo(operationId, data) {
+async function insertUnloadingCargo(recordName, data,user,vessel) {
     let transaction;
 
     try {
         // Start a transaction
-        
+        if(!recordName)
+        {
+            throw new Error("Invalid Operation type provided");
+            
+        }
         transaction = new sql.Transaction(await pool); 
         await transaction.begin();
         console.log("Transaction started...");
 
         // Insert into UnloadingOfOilCargo table
         const query1 = `
-            INSERT INTO UnloadingOfOilCargo ( recordId, placeOfUnloading, tankEmptied, quantityRetainedM3) 
-            VALUES ( @recordId, @placeOfUnloading, @tankEmptied, @quantityRetainedM3);
+            INSERT INTO UnloadingOfOilCargo ( placeOfUnloading, tankEmptied, quantityRetainedM3) 
+            VALUES ( @placeOfUnloading, @tankEmptied, @quantityRetainedM3);
             SELECT SCOPE_IDENTITY() AS newOperationId;
         `;
 
@@ -2067,43 +3009,69 @@ async function insertUnloadingCargo(operationId, data) {
             return parseFloat(value.toFixed(scale));
         }
         const quantityRetainedUnloadM3 = validateDecimal(data.quantityRetainedUnload);
-
+        const approvedby = 1;
+        const approvalStatus = 0;
+        const verificationStatus =0;
+        const verifiedBy= 2;
+        const verificationRemarks = `verified`;
         const result1 = await transaction.request()
-            .input("recordId", sql.Int, operationId)
+            
             .input("placeOfUnloading", sql.NVarChar(150), data.placeOfUnloading)
             .input("tankEmptied", sql.NVarChar(10), data.tankEmptiedUnload)
             .input("quantityRetainedM3", sql.Decimal(10, 2), quantityRetainedUnloadM3)
             .query(query1);
 
         const newOperationId = result1.recordset[0].newOperationId; // Get the inserted operationId
-        console.log("Inserted into UnloadingOfOilCargo with operationId:", newOperationId);
-
-        // Insert into UnloadingOfOilCargo_Tanks for each tank entry
+        const result2 = await transaction.request()
+      .input('approvedby', sql.Int, approvedby)
+      .input('approvalStatus', sql.Int, approvalStatus)
+      .input('createdBy', sql.Int,user )
+      .input('vesselId', sql.Int, vessel)
+      .input('verifiedBy', sql.Int, verifiedBy)
+      .input('verifiedAt', sql.DateTime, new Date())
+      .input('verificationStatus', sql.Int, verificationStatus)
+      .input('verificationRemarks', sql.NVarChar(255), verificationRemarks)
+      .input('UnloadingOfOilCargo_id', sql.Int, newOperationId)
+      .input('operationName',sql.NVarChar(250),recordName)
+      .query(`
+        INSERT INTO tbl_orb_2 (
+          approvedby, approvalStatus, createdBy, vesselId, 
+          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          UnloadingOfOilCargo_id,operationName
+        )
+        VALUES (
+          @approvedby, @approvalStatus, @createdBy, @vesselId, 
+          @verifiedBy,@verifiedAt,  @verificationStatus, @verificationRemarks,
+          @UnloadingOfOilCargo_id, @operationName
+        )
+      `);
+        
         if (data.tanks && data.tanks.length > 0) {
             const query2 = `
-                INSERT INTO UnloadingOfOilCargo_Tanks (operationId, tankIdentity) 
-                VALUES (@operationId, @tankIdentity);
+                INSERT INTO UnloadingOfOilCargo_Tanks (operationId, tankIdentity,quantity) 
+                VALUES (@operationId, @tankIdentity,@quantity);
             `;
 
             for (const tank of data.tanks) {
                 await transaction.request()
                     .input("operationId", sql.Int, newOperationId)
-                    .input("tankIdentity", sql.NVarChar(100), tank)
+                    .input("tankIdentity", sql.NVarChar(100), tank.identity)
+                    .input("quantity",sql.Decimal(10,3),tank.quantity)
                     .query(query2);
             }
             console.log("Inserted into UnloadingOfOilCargo_Tanks successfully.");
         }
 
-        // Commit transaction
+      
         await transaction.commit();
         console.log("Transaction committed successfully.");
 
-        return { message: `Unloading Cargo submitted successfully with operationId ${newOperationId}` };
+        return { message: `Unloading of oil Cargo created successfully` };
 
     } catch (error) {
         console.error("Error inserting Unloading Cargo:", error);
 
-        // Rollback transaction on error
+        
         if (transaction) {
             await transaction.rollback();
             console.log("Transaction rolled back due to an error.");
@@ -2117,1119 +3085,4 @@ async function insertUnloadingCargo(operationId, data) {
     }
 }
 
-async function fetchLoadingOilCargo(vesselId) {
-    try {
-       
-        const result = await pool.request()
-        .input("vesselId",sql.Int,vesselId)
-        .query(`
-            SELECT 
-    -- ORB Record Details
-    
-    
-    o.approvedby,
-    o.approvalStatus,
-    u.fullname AS createdBy,  
-    
-
-    -- Loading of Oil Cargo Details
-    
-    loc.placeOfLoading,
-    loc.typeOfOilLoaded,
-    loc.quantityAddedM3,
-    loc.totalContentOfTanksM3,
-    loc.createdAt,
-
-    -- Grouped Tank Identities
-    STRING_AGG(loct.tankIdentity, ', ') AS tankIdentities,
-    STRING_AGG(CAST(loct.quantityLoadedM3 AS NVARCHAR), ', ') AS quantityLoadedPerTank
-
-FROM tbl_orb_2 o
--- Link ORB to User to get fullname
-INNER JOIN tbl_user u ON o.createdBy = u.user_id 
--- Link ORB to Loading Of Oil Cargo
-INNER JOIN LoadingOfOilCargo loc ON o.recordId = loc.recordId 
--- Link Loading Of Oil Cargo to Tanks
-LEFT JOIN LoadingOfOilCargo_Tanks loct ON loc.operationId = loct.operationId
-
-WHERE o.vesselId = @vesselId
-GROUP BY 
-    o.recordId, o.recordName, o.approvedby, o.approvalStatus, u.fullname, 
-    loc.operationId, loc.placeOfLoading, loc.typeOfOilLoaded, loc.quantityAddedM3, loc.totalContentOfTanksM3,loc.createdAt;
-`);
-        return result.recordset || [];
-    } catch (error) {
-        console.error(error);
-        return { message: "Error fetching Loading Oil Cargo records" };
-    }
-}
-
-async function fetchInternalTransfer(vesselId) {
-    try {
-        
-        const result = await pool.request()
-        .input("vesselId",sql.Int,vesselId)
-        .query(`
-            SELECT 
-    -- ORB Record Details
-    
-    o.approvedby,
-    o.approvalStatus,
-    u.fullname AS createdBy,  
-
-    -- Internal Transfer of Oil Cargo Details
-    itoc.fromTank,
-    itoc.toTank,
-    itoc.quantityTransferredM3,
-    itoc.totalQuantityOfTanksM3,
-    itoc.tankEmptied,
-    itoc.quantityRetainedM3,
-    itoc.createdAt,
-
-    -- Grouped Tank Identities
-    STRING_AGG(it.tankIdentity, ', ') AS tankIdentities
-
-FROM tbl_orb_2 o
--- Link ORB to User to get fullname
-INNER JOIN tbl_user u ON o.createdBy = u.user_id 
--- Link ORB to Internal Transfer Of Oil Cargo
-INNER JOIN InternalTransferOfOilCargo itoc ON o.recordId = itoc.recordId 
--- Link Internal Transfer Of Oil Cargo to Tanks
-LEFT JOIN InternalTransfer_Tanks it ON itoc.operationId = it.operationId
-
-WHERE o.vesselId = @vesselId
-GROUP BY 
-    o.recordId, o.approvedby, o.approvalStatus, u.fullname, 
-    itoc.operationId, itoc.fromTank, itoc.toTank, itoc.quantityTransferredM3, 
-    itoc.totalQuantityOfTanksM3, itoc.tankEmptied, itoc.quantityRetainedM3, itoc.createdAt;
-
-            `);
-        return result.recordset || [];
-    } catch (error) {
-        console.error(error);
-        return { message: "Error fetching Internal Transfer Of Oil Cargo records" };
-    }
-}
-
-async function fetchUnloadingCargo(vessel) {
-    try {
-        
-        const result = await pool.request()
-        .input("vesselId",sql.Int,vessel)
-        .query(`
-            SELECT 
-    -- ORB Record Details
-    
-    o.approvedby,
-    o.approvalStatus,
-    u.fullname AS createdBy,  
-
-    -- Unloading of Oil Cargo Details
-    uo.placeOfUnloading,
-    uo.tankEmptied,
-    uo.quantityRetainedM3,
-    uo.createdAt ,
-
-    -- Grouped Tank Identities
-    STRING_AGG(uot.tankIdentity, ', ') AS tankIdentities
-
-FROM tbl_orb_2 o
--- Link ORB to User to get fullname
-INNER JOIN tbl_user u ON o.createdBy = u.user_id 
-
--- Link ORB to Unloading Of Oil Cargo
-INNER JOIN UnloadingOfOilCargo uo ON o.recordId = uo.recordId 
-
--- Link Unloading Of Oil Cargo to Tanks
-LEFT JOIN UnloadingOfOilCargo_Tanks uot ON uo.operationId = uot.operationId
-
-WHERE o.vesselId = @vesselId
-GROUP BY 
-    o.recordId, o.approvedby, o.approvalStatus, u.fullname, 
-    uo.operationId, uo.placeOfUnloading, uo.tankEmptied, 
-    uo.quantityRetainedM3, uo.createdAt;
-
-            `);
-        console.log(result.recordset);
-        return result.recordset || [];
-    } catch (error) {
-        console.error(error);
-        return { message: "Error fetching Loading Oil Cargo records" };
-    }
-}
-
-async function findOperationIdofCOW(recordId) {
-    try {
-        if (!recordId) {
-            throw new Error("recordId is required to get Crude Oil Washing details");
-        }
-
-        const res = await pool.request()
-            .input("recordId", sql.Int, recordId)
-            .query(`SELECT operationId FROM CrudeOilWashing WHERE recordId = @recordId`);
-
-        return res.recordset.length ? res.recordset[0].operationId : null;
-    } catch (error) {
-        console.error("Service error:", error);
-        throw new Error("Database operation failed");
-    }
-}
-
-
-async function fetchCrudeOilWashing(operationsId, user, vessel) {
-    try {
-        console.log("Fetching Crude Oil Washing for:", operationsId, user, vessel);
-
-        // Step 1: Get `operationId` from `CrudeOilWashing`
-        const operationId = await findOperationIdofCOW(operationsId);
-        if (!operationId) {
-            throw new Error("No operation found in CrudeOilWashing.");
-        }
-        
-        //  Execute main query
-        const result = await pool.request()
-            
-            .input("user", sql.Int, user)
-            .input("vessel", sql.Int, vessel)
-            .query(`
-                SELECT 
-    u.fullname AS CreatedBy,
-    o.approvedby, 
-    o.approvalStatus,  
-    o.createdAt,
-    t.tankIdentity, 
-    t.portOfWash, 
-    t.shipPosition, 
-    t.machinesInUse, 
-    t.startTimeWashing,
-    t.washingPattern, 
-    t.washingLinePressure, 
-    t.stopTimeWashing,
-    t.cleanlinessMethod, 
-    t.remarks
-FROM tbl_orb_2 o
-INNER JOIN tbl_ship s ON o.vesselId = s.id 
-INNER JOIN tbl_user u ON o.createdBy = u.user_id 
-INNER JOIN CrudeOilWashing c ON o.recordId = c.recordId 
-LEFT JOIN CrudeOilWashing_Tanks t ON c.operationId = t.operationId
-WHERE o.vesselId = @vessel AND o.createdBy = @user ;
-`);
-
-        console.log(result.recordset);
-        return result.recordset || [];
-    } catch (error) {
-        console.error("Error fetching Crude Oil Washing records:", error);
-        return { message: "Error fetching Crude Oil Washing records" }
-    }
-}
-
-async function fetchBallastingOfCargoTanks(recordId) {
-    try {
-    console.log(recordId);
-        if (!recordId || isNaN(recordId)) {
-            throw new Error("Invalid vesselId provided.");
-        }
-        
-        const query = `
-           SELECT 
-    -- ORB Record Details
-    
-    o.approvedby,
-    o.approvalStatus,
-    u.fullname AS createdBy,
-
-    -- Ballasting Details
-    b.startBallastingPlace,
-    b.endBallastingPlace,
-    b.createdAt,
-
-    -- Grouped Tank Identities
-    STRING_AGG(bt.tankIdentity, ', ') AS tankIdentities
-
-FROM tbl_orb_2 o
--- Link ORB to User to get fullname
-INNER JOIN tbl_user u ON o.createdBy = u.user_id 
--- Link ORB to Ballasting Operations
-INNER JOIN Ballasting b ON o.recordId = b.recordId 
--- Link Ballasting Operations to Ballasting Tanks
-LEFT JOIN BallastingTanks bt ON b.operationId = bt.ballastingId
-
-WHERE o.vesselId = @vesselId
-GROUP BY 
-    o.recordId, o.approvedby, o.approvalStatus, u.fullname, 
-    b.startBallastingPlace, b.endBallastingPlace,b.createdAt; `;
-     
-        const result = await pool.request()
-        .input("vesselId",sql.Int,recordId)
-        .query(query);
-
-        return result.recordset;
-
-    } 
-    catch (error) {
-        console.error("Error in fetchBallastingOfCargoTanks:", error.message);
-        throw new Error("Database query failed: " + error.message);
-    }
-}
-
-async function fetchCleanBallastingTanks(recordId) {
-    try {
-        console.log(recordId);
-            if (!recordId || isNaN(recordId)) {
-                throw new Error("Invalid vesselId provided.");
-            }
-            
-            const query = `SELECT 
-            -- ORB Record Details
-             u.fullname AS createdBy,
-            o.approvedby,
-            o.approvalStatus,
-             
-        
-            -- CBT Ballasting Details
-            cb.port,
-            cb.positionFlushed,
-            cb.oilyWaterQty,
-            cb.cleanBallastQty,
-            cb.valveTime,
-            cb.valvePosition,
-            cb.createdAt,
-        
-            -- Grouped Tank Identities
-            STRING_AGG(bt.tankIdentity, ', ') AS tankIdentities
-        
-        FROM tbl_orb_2 o
-        -- Link ORB to User to get fullname
-        INNER JOIN tbl_user u ON o.createdBy = u.user_id 
-        -- Link ORB to CBT Ballasting
-        INNER JOIN CbtBallasting cb ON o.recordId = cb.recordId 
-        -- Link CBT Ballasting to Tanks
-        LEFT JOIN CbtBallastingTanks bt ON cb.operationId = bt.operationId
-        
-        WHERE o.vesselId = @vesselId
-        GROUP BY 
-            o.recordId, o.approvedby, o.approvalStatus, u.fullname, 
-            cb.operationId, cb.port, cb.positionFlushed, cb.oilyWaterQty, 
-            cb.cleanBallastQty, cb.valveTime, cb.valvePosition,cb.createdAt;
-         `;
-         
-            const result = await pool.request()
-            .input("vesselId",sql.Int,recordId)
-            .query(query);
-    
-            return result.recordset;
-    
-        } 
-        catch (error) {
-            console.error("Error in fetchBallastingOfCargoTanks:", error.message);
-            throw new Error("Database query failed: " + error.message);
-        }
-}
-
-async function fetchCargoTankCleaning(recordId)
-    {
-    
-        try {
-        console.log(recordId);
-            if (!recordId || isNaN(recordId)) {
-                throw new Error("Invalid vesselId provided.");
-            }
-            
-            const query = `SELECT 
-    -- ORB Record Details
-    
-    u.fullname AS createdBy,
-    o.approvedby,
-    o.approvalStatus,
-      
-
-    -- Cargo Tank Cleaning Details
-    c.portOrShipPosition,
-    c.durationOfCleaning,
-    c.methodOfCleaning,
-    c.tanksWashingTransferredTo,
-    c.quantityTransferred,
-    c.totalQuantity,
-    c.portRf AS Port,
-    c.quantityRf AS Quantity,
-    c.createdAt ,
-
-    -- Grouped Tank Identities
-    STRING_AGG(t.tankIdentity, ', ') AS tankIdentities
-
-FROM tbl_orb_2 o
--- Link ORB to User to get fullname
-INNER JOIN tbl_user u ON o.createdBy = u.user_id 
--- Link ORB to Cargo Tank Cleaning
-INNER JOIN CargoTankCleaning c ON o.recordId = c.recordId 
--- Link Cargo Tank Cleaning to Tanks
-LEFT JOIN CargoTankCleaningTanks t ON c.operationId = t.operationId
-
-WHERE o.vesselId = @vesselId
-GROUP BY 
-    o.recordId, o.approvedby, o.approvalStatus, u.fullname, 
-    c.operationId, c.portOrShipPosition, c.durationOfCleaning, 
-    c.methodOfCleaning, c.tanksWashingTransferredTo, c.quantityTransferred, 
-    c.totalQuantity, c.portRf, c.quantityRf, c.createdAt;
-
-         `;
-         
-            const result = await pool.request()
-            .input("vesselId",sql.Int,recordId)
-            .query(query);
-    
-            return result.recordset;
-    
-        } 
-    catch (error) {
-            console.error("Error in fetchBallastingOfCargoTanks:", error.message);
-            throw new Error("Database query failed: " + error.message);
-        }
-}
-
-async function fetchDODB(recordId) {
-    try {
-        console.log(recordId);
-            if (!recordId || isNaN(recordId)) {
-                throw new Error("Invalid vesselId provided.");
-            }
-            
-            const query = `SELECT 
-    -- ORB Record Details
-	 u.fullname AS createdBy,
-    
-    o.approvedby,
-    o.approvalStatus,
-     
-
-    -- Dirty Ballast Discharge Details
-  
-    dbd.dischargeStartTime,
-    dbd.dischargeStartPosition,
-    dbd.dischargeCompleteTime,
-    dbd.dischargeCompletePosition,
-    dbd.shipSpeedKnots,
-    dbd.quantityDischargedM3,
-    dbd.monitoringSystem,
-    dbd.regularCheckup,
-    dbd.shorePort,
-    dbd.shoreQuantityM3,
-    dbd.createdAt ,
-
-    -- Grouped Tank Identities (Dirty Ballast Discharge Tanks)
-    STRING_AGG(dbdt.tankIdentity, ', ') AS dirtyBallastTankIdentities,
-
-    -- Grouped Oily Water Slop Tank Identities
-    STRING_AGG(owst.slopTankIdentity, ', ') AS slopTankIdentities
-
-FROM tbl_orb_2 o
--- Link ORB to User to get fullname
-INNER JOIN tbl_user u ON o.createdBy = u.user_id 
-
--- Link ORB to Dirty Ballast Discharge
-INNER JOIN DirtyBallastDischarge dbd ON o.recordId = dbd.recordId 
-
--- Link Dirty Ballast Discharge to Tanks
-LEFT JOIN DirtyBallastDischargeTanks dbdt ON dbd.operationId = dbdt.operationId
-
--- Link Dirty Ballast Discharge to Oily Water Slop Tanks
-LEFT JOIN OilyWaterSlopTanks owst ON dbd.operationId = owst.operationId
-
-WHERE o.vesselId = @vesselId
-GROUP BY 
-    o.recordId, o.approvedby, o.approvalStatus, u.fullname, 
-    dbd.operationId, dbd.dischargeStartTime, dbd.dischargeStartPosition, 
-    dbd.dischargeCompleteTime, dbd.dischargeCompletePosition, 
-    dbd.shipSpeedKnots, dbd.quantityDischargedM3, dbd.monitoringSystem, 
-    dbd.regularCheckup, dbd.shorePort, dbd.shoreQuantityM3, dbd.createdAt;
-         `;
-         
-            const result = await pool.request()
-            .input("vesselId",sql.Int,recordId)
-            .query(query);
-    
-            return result.recordset;
-    
-        } 
-    catch (error) {
-            console.error("Error in fetchDischarge of Dirty Ballast:", error.message);
-            throw new Error("Database query failed: " + error.message);
-        }
-}
-
-async function fetchDischargeWaterSlopTanks(recordId){
-
-    try {
-        console.log(recordId);
-            if (!recordId || isNaN(recordId)) {
-                throw new Error("Invalid vesselId provided.");
-            }
-            
-            const query = ` SELECT 
-            -- ORB Record Details
-            u.fullname AS createdBy,
-            
-            o.approvedby,
-            o.approvalStatus,
-        
-            -- Slop Tank Discharge Details
-            
-            std.settlingLastResidues,
-            std.settlingLastDischarge,
-            std.rateOfDischarge,
-            std.ullageCompletion,
-            std.valvesClosed,
-            std.createdAt,
-        
-            -- Grouped Slop Tank Identities
-            STRING_AGG(stdt.tankIdentity, ', ') AS slopTankIdentities
-        
-        FROM tbl_orb_2 o
-        
-        -- Link ORB to User to get creator's fullname
-        INNER JOIN tbl_user u ON o.createdBy = u.user_id
-        
-        -- Link ORB to Slop Tank Discharge
-        INNER JOIN SlopTankDischarge std ON o.recordId = std.recordId
-        
-        -- Link Slop Tank Discharge to its tanks
-        LEFT JOIN SlopTankDischargeTanks stdt ON std.operationId = stdt.operationId
-        
-        WHERE o.vesselId = @vesselId
-        
-        GROUP BY 
-            o.recordId, o.approvedby, o.approvalStatus, u.fullname,
-            std.operationId, std.settlingLastResidues, std.settlingLastDischarge, 
-            std.rateOfDischarge, std.ullageCompletion, std.valvesClosed, std.recordId,std.createdAt;
-        `;
-         
-            const result = await pool.request()
-            .input("vesselId",sql.Int,recordId)
-            .query(query);
-    
-            return result.recordset;
-    
-        } 
-    catch (error) {
-            console.error("Error in fetchDischarge of Dirty Ballast:", error.message);
-            throw new Error("Database query failed: " + error.message);
-        }
-}
-
-async function fetchCTDOfResidues(vesselId) {
-    try {
-        if (!vesselId || isNaN(vesselId)) {
-            throw new Error("Invalid vesselId provided.");
-        }
-
-        const methods = [
-            "reception facility",
-            "mixed cargo",
-            "other method",
-            "transfer to tank"
-        ];
-
-        const unifiedResults = [];
-
-        for (const method of methods) {
-            const result = await pool
-                .request()
-                .input("vesselId", sql.Int, vesselId)
-                .input("methodOfDisposal", sql.NVarChar, method)
-                .execute("sp_GetResidueTransferDisposalDetails");
-
-            const records = result.recordset;
-
-            for (const row of records) {
-                // Normalize the row structure by ensuring all expected fields exist
-                unifiedResults.push({
-                    createdBy: row.createdBy ?? null,
-                    recordId: row.recordId ?? null,
-                    approvedby: row.approvedby ?? null,
-                    approvalStatus: row.approvalStatus ?? null,
-                    createdAt: row.createdAt ?? null,
-                    operationId: row.operationId ?? null,
-                    methodOfDisposal: method,
-                    
-                    // Fields based on method
-                    portName: row.portName ?? null,
-                    quantityInvolved: row.quantityInvolved ?? null,
-                    quantityMixed: row.quantityMixed ?? null,
-                    methodName: row.methodName ?? null,
-                    quantityDisposed: row.quantityDisposed ?? null,
-                    quantityTransferred: row.quantityTransferred ?? null,
-                    totalQuantity: row.totalQuantity ?? null,
-                    tankIdentities: row.tankIdentities ?? null,
-                });
-            }
-        }
-
-        return unifiedResults;
-
-    } catch (error) {
-        console.error("Error in fetchCTDOfResidues:", error.message);
-        throw new Error("Failed to fetch residue transfer and disposal details.");
-    }
-}
-
-async function fetchDischargeOfCleanBallast(recordId){
-    try {
-        console.log(recordId);
-            if (!recordId || isNaN(recordId)) {
-                throw new Error("Invalid vesselId provided.");
-            }
-            
-            const query = `SELECT 
-    -- ORB Record Details
-    u.fullname AS createdBy,
-   
-    o.approvedby,
-    o.approvalStatus,
-
-    -- Clean Ballast Discharge Details
-    
-    cbd.positionStart,
-    cbd.positionCompletion,
-    cbd.tankEmptyCompletion,
-    cbd.regularCheck,
-    cbd.createdAt,
-
-    -- Grouped Tank Identities (Clean Ballast Discharge Tanks)
-    STRING_AGG(cbdt.tankIdentity, ', ') AS cleanBallastTankIdentities
-
-FROM tbl_orb_2 o
-
--- Link ORB to User to get fullname
-INNER JOIN tbl_user u ON o.createdBy = u.user_id
-
--- Link ORB to Clean Ballast Discharge
-INNER JOIN CleanBallastDischarge cbd ON o.recordId = cbd.recordId
-
--- Link Clean Ballast Discharge to Tanks
-LEFT JOIN CleanBallastDischargeTanks cbdt ON cbd.operationId = cbdt.operationId
-
-WHERE o.vesselId = @vesselId
-
-GROUP BY 
-    o.approvedby, o.approvalStatus, u.fullname,
-     cbd.positionStart, cbd.positionCompletion,cbd.createdAt, 
-    cbd.tankEmptyCompletion, cbd.regularCheck;`;
-         
-            const result = await pool.request()
-            .input("vesselId",sql.Int,recordId)
-            .query(query);
-    
-            return result.recordset;
-    
-        } 
-    catch (error) {
-            console.error("Error in fetchDischarge of Dirty Ballast:", error.message);
-            throw new Error("Database query failed: " + error.message);
-        }
-}
-
-async function fetchDischargeOfBallastFromDedicated(recordId){
-    try {
-        console.log(recordId);
-            if (!recordId || isNaN(recordId)) {
-                throw new Error("Invalid vesselId provided.");
-            }
-            
-            const query = `SELECT 
-            -- ORB Record Details
-            u.fullname AS createdBy,
-            
-            o.approvedby,
-            o.approvalStatus,
-            
-            -- CBT Ballast Discharge Details
-            
-            cbd.posStart,
-            cbd.timeStart,
-            cbd.posCompletion,
-            cbd.timeCompletion,
-            cbd.qtySea,
-            cbd.qtyReception,
-            cbd.portReception,
-            cbd.oilContamination,
-            cbd.monitoredByOilMeter,
-            cbd.valveClosePos,
-            cbd.valveCloseTime,
-            o.createdAt,
-        
-            -- Grouped Tank Identities (CBT Ballast Discharge Tanks)
-            STRING_AGG(cbdt.tankIdentity, ', ') AS cbtBallastTankIdentities
-        
-        FROM tbl_orb_2 o
-        
-        -- Link ORB to User to get fullname
-        INNER JOIN tbl_user u ON o.createdBy = u.user_id 
-        
-        -- Link ORB to CBT Ballast Discharge
-        INNER JOIN CbtBallastDischarge cbd ON o.recordId = cbd.recordId
-        
-        -- Link CBT Ballast Discharge to Tanks
-        LEFT JOIN CbtBallastDischargeTanks cbdt ON cbd.operationId = cbdt.operationId
-        
-        WHERE o.vesselId = @vesselId
-        
-        GROUP BY 
-            o.approvedby, o.approvalStatus, u.fullname, o.createdAt,
-            cbd.posStart, cbd.timeStart, cbd.posCompletion, cbd.timeCompletion,
-            cbd.qtySea, cbd.qtyReception, cbd.portReception, cbd.oilContamination,
-            cbd.monitoredByOilMeter, cbd.valveClosePos, cbd.valveCloseTime;
-        
-         `;
-         
-            const result = await pool.request()
-            .input("vesselId",sql.Int,recordId)
-            .query(query);
-    
-            return result.recordset;
-    
-        } 
-    catch (error) {
-            console.error("Error in fetchDischarge of Dirty Ballast:", error.message);
-            throw new Error("Database query failed: " + error.message);
-        }
-}
-
-async function fetchConditionOfODMAC(recordId){
-    try {
-        console.log(recordId);
-            if (!recordId || isNaN(recordId)) {
-                throw new Error("Invalid vesselId provided.");
-            }
-            
-            const query = `SELECT 
-    -- ORB Record Details
-    u.fullname AS createdBy,
-    o.approvedby,
-    o.approvalStatus,
-    
-    -- Oil Discharge Monitoring System Details
-    odms.timeOfSystemFailure,
-    odms.timeSystemOperational,
-    odms.reasonForFailure,
-    odms.createdAt
-
-FROM tbl_orb_2 o
-
--- Link ORB to User to get creator's fullname
-INNER JOIN tbl_user u ON o.createdBy = u.user_id
-
--- Link ORB to Oil Discharge Monitoring System
-INNER JOIN OilDischargeMonitoringSystem odms ON o.recordId = odms.recordId
-
-WHERE o.vesselId = @vesselId; `;
-         
-            const result = await pool.request()
-            .input("vesselId",sql.Int,recordId)
-            .query(query);
-    
-            return result.recordset;
-    
-        } 
-    catch (error) {
-            console.error("Error in fetchDischarge of Dirty Ballast:", error.message);
-            throw new Error("Database query failed: " + error.message);
-        }
-}
-
-async function fetchAccidentOrOtherExceptional(recordId){
-    try {
-        console.log(recordId);
-            if (!recordId || isNaN(recordId)) {
-                throw new Error("Invalid vesselId provided.");
-            }
-            
-            const query = `SELECT 
-            -- ORB Record Details
-            u.fullname AS createdBy,
-            
-            o.approvedby,
-            o.approvalStatus,
-        
-            -- Accidental Discharge Details
-           
-            ad.timeOfOccurrence,
-            ad.portAtTimeOfOccurrence,
-            ad.positionOfShip,
-            ad.approximateQuantityM3,
-            ad.typeOfOil,
-            ad.circumstances,
-            ad.reasons,
-            ad.generalRemarks,
-            o.createdAt
-        
-        FROM tbl_orb_2 o
-        
-       
-        INNER JOIN tbl_user u ON o.createdBy = u.user_id
-        
-        
-        INNER JOIN AccidentalDischarge ad ON o.recordId = ad.recordId
-        
-        WHERE o.vesselId = @vesselId;
-        
-         `;
-         
-            const result = await pool.request()
-            .input("vesselId",sql.Int,recordId)
-            .query(query);
-    
-            return result.recordset;
-    
-        } 
-    catch (error) {
-            console.error("Error in fetchDischarge of Dirty Ballast:", error.message);
-            throw new Error("Database query failed: " + error.message);
-        }
-}
-
-async function fetchAdditionalOperationalProcedures(recordId){
-    try {
-        console.log(recordId);
-            if (!recordId || isNaN(recordId)) {
-                throw new Error("Invalid vesselId provided.");
-            }
-            
-            const query = `SELECT 
-            -- ORB Record Details
-            u.fullname AS createdBy,
-            
-            o.approvedby,
-            o.approvalStatus,
-            
-        
-            -- Additional Procedures Operation Details
-            
-            ap.additionalProcedures,
-            ap.generalRemarks,
-            ap.createdAt
-        
-        FROM tbl_orb_2 o
-        
-        -- Link ORB to User to get fullname
-        INNER JOIN tbl_user u ON o.createdBy = u.user_id 
-        
-        -- Link ORB to Additional Procedures
-        INNER JOIN AdditionalProcedures ap ON o.recordId = ap.recordId
-        
-        WHERE o.vesselId = @vesselId
-                 `;
-         
-            const result = await pool.request()
-            .input("vesselId",sql.Int,recordId)
-            .query(query);
-    
-            return result.recordset;
-    
-        } 
-    catch (error) {
-            console.error("Error in fetchDischarge of Dirty Ballast:", error.message);
-            throw new Error("Database query failed: " + error.message);
-        }
-}
-
-async function fetchLoadingOfBallastWater(recordId){
-    try {
-        console.log(recordId);
-            if (!recordId || isNaN(recordId)) {
-                throw new Error("Invalid vesselId provided.");
-            }
-            
-            const query = `SELECT 
-            -- ORB Record Details
-            u.fullname AS createdBy,
-            
-            o.approvedby,
-            o.approvalStatus,
-        
-            -- Loading Ballast Water Details
-         
-            lbw.positionOfShip,
-            lbw.totalQuantityM3,
-            lbw.remarks,
-            
-        
-            o.createdAt,
-        
-            -- Grouped Tank Identities (Loading Ballast Water Tanks)
-            STRING_AGG(lbt.tankIdentity, ', ') AS ballastTankIdentities
-        
-        FROM tbl_orb_2 o
-        
-        -- Link ORB to User to get fullname
-        INNER JOIN tbl_user u ON o.createdBy = u.user_id
-        
-        -- Link ORB to LoadingBallastWater
-        INNER JOIN LoadingBallastWater lbw ON o.recordId = lbw.recordId
-        
-        -- Link LoadingBallastWater to Tanks
-        LEFT JOIN LoadingBallastWaterTanks lbt ON lbw.operationId = lbt.operationId
-        
-        WHERE o.vesselId = @vesselId
-        
-        GROUP BY 
-             o.approvedby, o.approvalStatus, u.fullname,
-            lbw.positionOfShip, lbw.totalQuantityM3, 
-            lbw.remarks,  o.createdAt;
-        
-         `;
-         
-            const result = await pool.request()
-            .input("vesselId",sql.Int,recordId)
-            .query(query);
-    
-            return result.recordset;
-    
-        } 
-    catch (error) {
-            console.error("Error in fetchDischarge of Dirty Ballast:", error.message);
-            throw new Error("Database query failed: " + error.message);
-        }
-}
-
-async function fetchReallocationOfBallastWater(recordId){
-    try {
-        console.log(recordId);
-            if (!recordId || isNaN(recordId)) {
-                throw new Error("Invalid vesselId provided.");
-            }
-            
-            const query = `SELECT 
-            -- ORB Record Details
-            u.fullname AS createdBy,
-           
-            o.approvedby,
-            o.approvalStatus,
-        
-            -- Reallocation Ballast Water Details
-           
-            rbw.reason,
-        
-            o.createdAt
-        
-        FROM tbl_orb_2 o
-        
-        -- Link ORB to User to get fullname
-        INNER JOIN tbl_user u ON o.createdBy = u.user_id
-        
-        -- Link ORB to ReallocationBallastWater
-        INNER JOIN ReallocationBallastWater rbw ON o.recordId = rbw.recordId
-        
-        WHERE o.vesselId = @vesselId;
-        
-         `;
-         
-            const result = await pool.request()
-            .input("vesselId",sql.Int,recordId)
-            .query(query);
-    
-            return result.recordset;
-    
-        } 
-    catch (error) {
-            console.error("Error in fetchDischarge of Dirty Ballast:", error.message);
-            throw new Error("Database query failed: " + error.message);
-        }
-}
-
-async function fetchBallastWaterDischargeToRF(recordId){
-    try {
-        console.log(recordId);
-            if (!recordId || isNaN(recordId)) {
-                throw new Error("Invalid vesselId provided.");
-            }
-            
-            const query = `SELECT 
-            -- ORB Record & User Details
-            u.fullname AS createdBy,
-            
-            o.approvedby,
-            o.approvalStatus,
-            o.createdAt,
-        
-            -- Ballast Water Discharge Reception Details
-            
-            bwdr.portName,
-            bwdr.receptionFacility,
-            bwdr.totalQuantityDischarged
-        
-        FROM tbl_orb_2 o
-        
-        -- Link ORB to User to get creator name
-        INNER JOIN tbl_user u ON o.createdBy = u.user_id
-        
-        -- Link ORB to Ballast Water Discharge Reception
-        INNER JOIN BallastWaterDischargeReception bwdr ON o.recordId = bwdr.recordId
-        
-        WHERE o.vesselId = @vesselId
-        
-         `;
-         
-            const result = await pool.request()
-            .input("vesselId",sql.Int,recordId)
-            .query(query);
-    
-            return result.recordset;
-    
-        } 
-    catch (error) {
-            console.error("Error in fetchDischarge of Dirty Ballast:", error.message);
-            throw new Error("Database query failed: " + error.message);
-        }
-}
-
-
-export async function fetchReceptionFacility(vessel) {
-    try {
-      
-      const result = await pool.request()
-        .input("vesselId", sql.Int, vessel)
-        .query(`
-            SELECT
-	u.fullname AS createdByName,
-	o.approvedby,
-    o.approvalStatus,
-    
-    r.portName, 
-	r.quantityInvolved,
-    d.methodOfDisposal,
-	r.createdAt
-FROM DisposalReceptionFacility r
-INNER JOIN ResidueTransferDisposal d ON r.operationId = d.operationId
-INNER JOIN tbl_orb_2 o ON d.recordId = o.recordId
-INNER JOIN tbl_user u ON o.createdBy = u.user_id
-INNER JOIN tbl_ship s ON o.vesselId = s.id
-WHERE o.vesselId = @vesselId;
-
-            `);
-      return result.recordset;
-    } catch (err) {
-      throw new Error("Failed to fetch Reception Facility data: " + err.message);
-    }
-  }
-  
-  export async function fetchMixedCargo(vessel) {
-    try {
-      
-      const result = await pool.request()
-        .input("vesselId", sql.Int, vessel)
-        .query(`
-            SELECT 
-	u.fullname AS createdBy,
-	o.approvedby,
-    o.approvalStatus,
-    m.quantityMixed,
-    d.methodOfDisposal,
-	m.createdAt
-FROM DisposalMixedCargo m
-INNER JOIN ResidueTransferDisposal d ON m.operationId = d.operationId
-INNER JOIN tbl_orb_2 o ON d.recordId = o.recordId
-INNER JOIN tbl_user u ON o.createdBy = u.user_id
-INNER JOIN tbl_ship s ON o.vesselId = s.id
-WHERE o.vesselId = @vesselId;
-
-            `);
-      return result.recordset;
-    } catch (err) {
-      throw new Error("Failed to fetch Mixed Cargo data: " + err.message);
-    }
-  }
-  
-  export async function fetchOtherMethod(vessel) {
-    try {
-      
-      const result = await pool.request()
-        .input("vesselId", sql.Int, vessel)
-        .query(`SELECT 
-    -- ORB2 core details
-    o.approvedby,
-    o.approvalStatus,
-   
-
-    -- Created by user details
-    
-    u1.fullname AS createdBy,
-
-
-    
-
-    -- ResidueTransferDisposal
-    d.methodOfDisposal,
-
-    -- DisposalOtherMethod
-    om.methodName,
-    om.quantityDisposed,
-    om.createdAt
-
-FROM DisposalOtherMethod om
-INNER JOIN ResidueTransferDisposal d ON om.operationId = d.operationId
-INNER JOIN tbl_orb_2 o ON d.recordId = o.recordId
-INNER JOIN tbl_ship s ON o.vesselId = s.id
-
--- Join for createdBy user
-LEFT JOIN tbl_user u1 ON o.createdBy = u1.user_id
-
--- Join for approvedBy user
-LEFT JOIN tbl_user u2 ON o.approvedby = u2.user_id
-
-WHERE o.vesselId = @vesselId;
-`);
-      return result.recordset;
-    } catch (err) {
-      throw new Error("Failed to fetch Other Method data: " + err.message);
-    }
-  }
-  
-  export async function fetchTransferToTank(vessel) {
-    try {
-
-      const result = await pool.request()
-        .input("vesselId", sql.Int, vessel)
-        .query(`SELECT 
-
-            -- User Details
-            u.fullname AS createdBy,
-            -- ORB2 Details
-           
-            o.approvedby,
-            o.approvalStatus,
-            
-        
-            -- ResidueTransferDisposal Details
-            
-            d.methodOfDisposal,
-        
-            -- Transfer Tank Info
-            t.quantityTransferred,
-            t.totalQuantity,
-            t.createdAt ,
-        
-            -- Grouped Tank Identities
-            STRING_AGG(l.tankIdentity, ', ') AS tankIdentities
-        
-        FROM DisposalTransferTanks t
-        INNER JOIN DisposalTransferTankList l ON t.transferId = l.transferId
-        INNER JOIN ResidueTransferDisposal d ON t.operationId = d.operationId
-        INNER JOIN tbl_orb_2 o ON d.recordId = o.recordId
-        INNER JOIN tbl_user u ON o.createdBy = u.user_id
-        INNER JOIN tbl_ship s ON o.vesselId = s.id
-        
-        WHERE o.vesselId = @vesselId
-        
-        GROUP BY 
-            o.recordId, o.recordName, o.approvedby, o.approvalStatus,
-            o.createdBy, o.vesselId, o.createdAt,
-            u.fullname,
-            d.operationId, d.methodOfDisposal,
-            t.quantityTransferred, t.totalQuantity, t.createdAt;
-         `);
-      return result.recordset;
-    } catch (err) {
-      throw new Error("Failed to fetch Transfer to Tank data: " + err.message);
-    }
-  }
 export  { processOperation, fetchOperation }

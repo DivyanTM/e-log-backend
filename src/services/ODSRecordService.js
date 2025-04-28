@@ -11,102 +11,148 @@ let pool;
         }
 })();
 
-//Function to create and check ODSOPeration Data
-async function checkAndCreate(operation, user, vessel) {
-    try {
-       
-        const approvedby = 1;
-        const approvalStatus = 0;
-        
-        // Check if operation exists
-        const res = await pool
-            .request()
-            .input("operationName", sql.NVarChar, operation)
-            .query("SELECT operationId FROM tbl_ODSOperation WHERE operationName = @operationName");
-
-        if (!res.recordset.length) {
-           
-            
-            await pool
-                .request()
-                .input("operationName", sql.NVarChar, operation)
-                .input("createdBy", sql.Int, user)
-                .input("vesselId", sql.Int, vessel)
-                .input("approvedby", sql.Int, approvedby)
-                .input("approvalStatus", sql.Int, approvalStatus)
-                .query(`INSERT INTO tbl_ODSOperation (operationName, createdBy, vesselId, approvedby, approvalStatus) 
-                        VALUES (@operationName, @createdBy, @vesselId, @approvedby, @approvalStatus)`);
-            
-            console.log("Operation created successfully at", new Date());
-        } else {
-            console.log("Operation already exists");
+function flattenObject(obj, parent = "", res = {}) {
+    for (let key in obj) {
+      if (!obj.hasOwnProperty(key)) continue;
+  
+      const value = obj[key];
+  
+      if (Array.isArray(value)) {
+        value.forEach(item => {
+          flattenObject(item, "", res); 
+        });
+      } else if (typeof value === "object" && value !== null) {
+        flattenObject(value, "", res); 
+      } else {
+        res[key] = value; 
+      }
+    }
+    return res;
+  }
+  
+  
+  function prettifyKeys(obj) {
+    const newObj = {};
+    for (const key in obj) {
+      if (!obj.hasOwnProperty(key)) continue;
+  
+      const prettyKey = key
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/^./, str => str.toUpperCase());
+  
+      newObj[prettyKey] = obj[key];
+    }
+    return newObj;
+  }
+  
+  function formatDates(obj) {
+    const isDate = (val) => /^\d{4}-\d{2}-\d{2}$/.test(val);
+    const isTime = (val) => /^\d{2}:\d{2}:\d{2}$/.test(val);
+    const isDateTime = (val) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?$/.test(val);
+  
+    for (const key in obj) {
+      const val = obj[key];
+  
+      if (val instanceof Date) {
+        obj[key] = val.toLocaleString();
+      } else if (typeof val === "string") {
+        if (isDateTime(val)) {
+          const date = new Date(val);
+          obj[key] = date.toLocaleString(); 
+        } else if (isDate(val)) {
+          const date = new Date(val + "T00:00:00");
+          obj[key] = date.toLocaleDateString(); 
+        } else if (isTime(val)) {
+          const date = new Date("1970-01-01T" + val);
+          obj[key] = date.toLocaleTimeString(); 
         }
-    } catch (error) {
-        
-        throw new Error("Database operation failed: " + error.message);
+      }
     }
-}
-
-// Function to get Operation Name 
-async function getOperationByName(operationName, user, vessel) {
-    try {
-        await checkAndCreate(operationName, user, vessel);
-
-        const result = await pool
-            .request()
-            .input("operationName", sql.NVarChar, operationName)
-            .query("SELECT operationId FROM tbl_ODSOperation WHERE operationName = @operationName");
-
-        return result.recordset.length ? result.recordset[0] : null;
-    } catch (error) {
-        
-        throw new Error("Database query failed: " + error.message);
+  
+    return obj;
+  }
+  function renameKeys(obj, keyMap) {
+    for (const oldKey in keyMap) {
+      if (obj.hasOwnProperty(oldKey)) {
+        obj[keyMap[oldKey]] = obj[oldKey];
+        delete obj[oldKey];
+      }
     }
-}
+    return obj;
+  }
+    
 
 
-// Retrieve records from ODSRecord by operationId
-async function getODSRecordsByOperation(operationId) {
+// Retrieve records from ODSRecord
+async function getODSRecordsByOperation(vesselId) {
     try {
         const result = await pool
             .request()
-            .input("vesselId", sql.Int, operationId)
+            .input("vesselId", sql.Int, vesselId)
             .query(`
                 SELECT 
-    -- ODS Operation Details
-   
-    o.approvedby,
-    o.approvalStatus,
-    
-    
-
-    -- User Details (Only Fullname)
-    u.fullname AS createdBy,  
-
-    -- ODS Record Details
-   
-    r.operationDate,
-    r.locationOnBoard ,
-    r.odsName,
-    r.capacityKg AS Capacity,
-    r.equipmentName AS RecordEquipmentName,
-    r.manufacturer,
-    r.yearOfInstallation,
-    r.processType,
-    r.processAmountKg,
-    r.occasion,
-    r.createdAt
-
-FROM tbl_ODSOperation o
--- Link ODS Operation to User to get createdBy (fullname)
-INNER JOIN tbl_user u ON o.createdBy = u.user_id 
--- Link ODS Operation to ODS Record
-INNER JOIN ODSRecord r ON o.operationId = r.operationId
-
-WHERE o.vesselId = @vesselId;
+    ods.*,
+    u.fullname AS createdby
+FROM 
+    tbl_ODSOperation AS ods
+LEFT JOIN 
+    tbl_user AS u ON ods.createdby = u.user_id
+WHERE 
+    ods.vesselId = @vesselId
+ORDER BY 
+    ods.createdAt DESC;
 
                 `);
-        return result.recordset;
+        let records = result.recordset;
+        for(let record of records)
+        {
+            
+          if (record.ODSEquipmentId != null) {
+            const mainRes = await pool
+              .request()
+              .input("operationId", sql.Int, record.ODSEquipmentId)
+              .query("SELECT * FROM ODSEquipment WHERE operationId = @operationId");
+          
+            let details = formatDates({ ...mainRes.recordset[0] });
+            details = flattenObject(details);
+            details = prettifyKeys(details);
+          
+            delete details["Operation Id"]; 
+           
+            record.details = details;
+            const keyforRename = {
+              "Capacity Kg" : "Capacity (kg)",
+              
+              
+            };
+            record.details = renameKeys(details,keyforRename);
+          } 
+          else if (record.ODSRecordId != null) {
+            const mainRes = await pool
+              .request()
+              .input("operationId", sql.Int, record.ODSRecordId)
+              .query("SELECT * FROM ODSRecord WHERE operationId = @operationId");
+          
+            let details = formatDates({ ...mainRes.recordset[0] });
+            details = flattenObject(details);
+            details = prettifyKeys(details);
+          
+            delete details["Operation Id"]; 
+            details['Process Amount Kg'] = `₹${details['Process Amount Kg']}`;
+            record.details = details;
+            const keyforRename = {
+              "Capacity Kg" : "Capacity (kg)",
+              "Process Amount Kg":"Process Amount",
+              "Ods Name":"Ozone-Depleting substance Name"
+            };
+            record.details = renameKeys(details,keyforRename);
+          }
+          
+         
+          console.log(records);
+        }
+        
+        return records ? records : {};
     } 
     
     catch (error) {
@@ -115,49 +161,7 @@ WHERE o.vesselId = @vesselId;
     }
 }
 
-// Retrieve records from ODSEquipment by operationId
-async function getODSEquipmentByOperation(operationId) {
-    try {
-        const result = await pool
-            .request()
-            .input("vesselId", sql.Int, operationId)
-            .query(`
-                SELECT 
 
-    -- ODS Operation Details
-    
-   
-    o.approvedby,
-    o.approvalStatus,
-    
-
-    -- ODS Equipment Details
-    
-    e.equipmentName,
-    e.refrigerant,
-    e.locationOnBoard AS EquipmentLocation,
-    e.capacityKg AS EquipmentCapacity,
-    e.remarks AS EquipmentRemarks,
-    e.createdAt ,
-
-	 -- User Details (Only Fullname)
-    u.fullname AS createdBy
-
-FROM tbl_ODSOperation o
--- Link ODS Operation to User to get createdBy (fullname)
-INNER JOIN tbl_user u ON o.createdBy = u.user_id 
--- Link ODS Operation to ODS Equipment
-INNER JOIN ODSEquipment e ON o.operationId = e.operationId
-
-WHERE o.vesselId = @vesselId;
-
-                `);
-        return result.recordset;
-    } catch (error) {
-        console.log(error);
-        throw new Error("Failed to retrieve ODS equipment: " + error.message);
-    }
-}
 
 // Insert into ODSRecord
 async function insertODSRecord(data) {
@@ -166,7 +170,7 @@ async function insertODSRecord(data) {
 
         // Validation
         const requiredFields = [
-            { field: 'operationId', value: data.operationId, type: 'number' },
+            
             { field: 'date', value: r.date, type: 'string' },
             { field: 'locationonboard', value: r.locationonboard, type: 'string' },
             { field: 'ODSName', value: r.ODSName, type: 'string' },
@@ -196,7 +200,7 @@ async function insertODSRecord(data) {
 
         const result = await pool
             .request()
-            .input("operationId", sql.Int, data.operationId)
+            
             .input("operationDate", sql.Date, r.date)
             .input("locationOnBoard", sql.NVarChar, r.locationonboard)
             .input("odsName", sql.NVarChar, r.ODSName)
@@ -209,15 +213,44 @@ async function insertODSRecord(data) {
             .input("occasion", sql.NVarChar, r.Occasion)
             .input("createdAt", sql.DateTime, new Date())
             .query(`
-                INSERT INTO ODSRecord (operationId, operationDate, locationOnBoard, odsName, capacityKg, 
+                INSERT INTO ODSRecord ( operationDate, locationOnBoard, odsName, capacityKg, 
                                        equipmentName, manufacturer, yearOfInstallation, processType, 
                                        processAmountKg, occasion, createdAt) 
-                VALUES (@operationId, @operationDate, @locationOnBoard, @odsName, @capacityKg, 
+                VALUES ( @operationDate, @locationOnBoard, @odsName, @capacityKg, 
                         @equipmentName, @manufacturer, @yearOfInstallation, @processType, 
-                        @processAmountKg, @occasion, @createdAt)
+                        @processAmountKg, @occasion, @createdAt);
+                SELECT SCOPE_IDENTITY() AS operationId;
             `);
-
-        if (result.rowsAffected && result.rowsAffected[0] > 0) {
+         const operationId = result.recordset[0].operationId;
+                const approvedby = 1;
+            const approvalStatus = 0;
+            const verificationStatus =0;
+            const verifiedBy= 2;
+            const verficationRemarks = `verified`;
+            const result2 = await pool.request()
+              .input('approvedby', sql.Int, approvedby)
+              .input('approvalStatus', sql.Int, approvalStatus)
+              .input('createdBy', sql.Int,r.userId )
+              .input('vesselId', sql.Int, r.vesselId)
+              .input('verifiedBy', sql.Int, verifiedBy)
+              .input('verifiedAt', sql.DateTime, new Date())
+              .input('verificationStatus', sql.Int, verificationStatus)
+              .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+              .input('ReallocationBallastWater_id', sql.Int, operationId)
+              .input('operationName',sql.NVarChar(250),r.operation2)
+              .query(`
+                INSERT INTO tbl_ODSOperation (
+                  approvedby, approvalStatus, createdBy, vesselId, 
+                  verifiedBy,verifiedAt,  verificationStatus, verficationRemarks,
+                  ODSrecordId,operationName
+                )
+                VALUES (
+                  @approvedby, @approvalStatus, @createdBy, @vesselId, 
+                  @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+                  @ReallocationBallastWater_id, @operationName
+                )
+              `);
+        if (result2.rowsAffected && result2.rowsAffected[0] > 0) {
             return {
                 statusCode: 201,
                 message: "ODS record inserted successfully.",
@@ -248,7 +281,7 @@ async function insertODSEquipment(data) {
         const e = data.equipment;
 
         const requiredFields = [
-            { field: 'operationId', value: data.operationId, type: 'number' },
+           
             { field: 'en', value: e.en, type: 'string' },
             { field: 'refrigerant', value: e.refrigerant, type: 'string' },
             { field: 'location', value: e.location, type: 'string' },
@@ -273,7 +306,7 @@ async function insertODSEquipment(data) {
 
         const result = await pool
             .request()
-            .input("operationId", sql.Int, data.operationId)
+            
             .input("equipmentName", sql.NVarChar, e.en)
             .input("refrigerant", sql.NVarChar, e.refrigerant)
             .input("locationOnBoard", sql.NVarChar, e.location)
@@ -281,11 +314,41 @@ async function insertODSEquipment(data) {
             .input("remarks", sql.NVarChar, e.remarks)
             .input("createdAt", sql.DateTime, new Date())
             .query(`
-                INSERT INTO ODSEquipment (operationId, equipmentName, refrigerant, locationOnBoard, capacityKg, remarks, createdAt)
-                VALUES (@operationId, @equipmentName, @refrigerant, @locationOnBoard, @capacityKg, @remarks, @createdAt)
-            `);
-
-        if (result.rowsAffected && result.rowsAffected[0] > 0) {
+                INSERT INTO ODSEquipment ( equipmentName, refrigerant, locationOnBoard, capacityKg, remarks, createdAt)
+                VALUES ( @equipmentName, @refrigerant, @locationOnBoard, @capacityKg, @remarks, @createdAt);
+                SELECT SCOPE_IDENTITY() AS operationId;
+                `);
+            const operationId = result.recordset[0].operationId;
+            const approvedby = 1;
+        const approvalStatus = 0;
+        const verificationStatus =0;
+        const verifiedBy= 2;
+        const verficationRemarks = `verified`;
+        const result2 = await pool.request()
+          .input('approvedby', sql.Int, approvedby)
+          .input('approvalStatus', sql.Int, approvalStatus)
+          .input('createdBy', sql.Int,e.userId )
+          .input('vesselId', sql.Int, e.vesselId)
+          .input('verifiedBy', sql.Int, verifiedBy)
+          .input('verifiedAt', sql.DateTime, new Date())
+          .input('verificationStatus', sql.Int, verificationStatus)
+          .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+          .input('ReallocationBallastWater_id', sql.Int, operationId)
+          .input('operationName',sql.NVarChar(250),e.operation1)
+          .query(`
+            INSERT INTO tbl_ODSOperation (
+              approvedby, approvalStatus, createdBy, vesselId, 
+              verifiedBy,verifiedAt,  verificationStatus, verficationRemarks,
+              ODSEquipmentId,operationName
+            )
+            VALUES (
+              @approvedby, @approvalStatus, @createdBy, @vesselId, 
+              @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+              @ReallocationBallastWater_id, @operationName
+            );
+            
+          `);
+        if (result2.rowsAffected && result2.rowsAffected[0] > 0) {
             return {
                 statusCode: 201,
                 message: "ODS equipment inserted successfully.",
@@ -310,4 +373,4 @@ async function insertODSEquipment(data) {
 }
 
 
-export  { getOperationByName, insertODSRecord, insertODSEquipment, getODSEquipmentByOperation, getODSRecordsByOperation };
+export  {  insertODSRecord, insertODSEquipment,  getODSRecordsByOperation };

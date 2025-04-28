@@ -55,10 +55,10 @@ async function createRecord(req,res){
         let inserted=await fuelOilReceivedRecordService.createRecord(data,vesselID);
 
         if(!inserted){
-            return res.status(400).send({message:"Record not created"});
+            return res.status(400).send({message:"Fuel oil received record not created"});
         }
 
-        return res.status(201).send({message:"Record created"});
+        return res.status(201).send({message:"Fuel oil received record created"});
 
     }catch(err){
         console.log(err);

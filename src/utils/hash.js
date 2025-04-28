@@ -8,8 +8,8 @@ async function hashPassword(password) {
 }
 
 async function comparePassword(password, hash) {
-    return await bcrypt.compare(password, hash);
-    
+    // return await bcrypt.compare(password, hash);
+    return await password === hash ;
 }
 
 export { hashPassword, comparePassword };

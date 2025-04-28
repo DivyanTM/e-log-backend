@@ -4,7 +4,7 @@ const orb2Router = express.Router();
 
 
 orb2Router.post('/submit-operations',orb2Controller.handleOperation);
-orb2Router.get('/retrieve-operations/:operationType',orb2Controller.getallOperations);
-orb2Router.get('/fetchCTDOfResidues/:methodType',orb2Controller.getallCTDmethods);
+orb2Router.get('/retrieve-operations',orb2Controller.getallOperations);
+
 
 export default orb2Router;

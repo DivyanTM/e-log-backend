@@ -46,15 +46,15 @@ async function createRecord(req, res) {
         let inserted=await NOXTierChangeOverRecordService.createRecord(data,vesselID);
 
         if(!inserted){
-            return res.status(400).send({message:"Cannot create record"});
+            return res.status(400).send({message:"Cannot create NOXTier record"});
         }
 
-        return res.status(201).send({message:"Data created"});
+        return res.status(201).send({message:"NOXTier chageOver record created successfully"});
 
 
     }catch(err){
         console.log(err);
-        return res.status(500).send({message:err.message||"Data not created"});
+        return res.status(500).send({message:err.message||"NOXTier chageOver not created"});
     }
 }
 
