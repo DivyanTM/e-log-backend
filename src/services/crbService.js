@@ -118,6 +118,7 @@ async function createRecord3(data, vesselID) {
 async function createRecord4(data, vesselID) {
     const pool = await getPool();
     try {
+        if (missingFields.length === 0) {
             const formResult = await pool.request()
                 .input("tankDetails", data.tankDetails)
                 .input("numCleaningMachines", parseInt(data.numCleaningMachines) || 0)
@@ -153,7 +154,7 @@ async function createRecord4(data, vesselID) {
             `);
 
             return { success: true, operationID };
-        
+        }
     } catch (err) {
         console.error("Ballast Water Discharge Facility Service Error:", err.message);
         throw err;
@@ -495,8 +496,123 @@ LEFT JOIN tbl_user u ON u.user_id = r.createdBy
 WHERE vesselID = @vesselID
             `);
 
+        const mainRecords = result.recordset;
+        const completeRecords = [];
+
+        for (const record of mainRecords) {
+            const completeRecord = { ...record };
+
+            // Check each ID field and query the corresponding table if not null
+            if (record.loadingCargo_ID) {
+                const loadingResult = await pool.request()
+                    .input('id', record.loadingCargo_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_loadingCargo_formEntries] WHERE operationID = @id');
+                completeRecord.loadingData = loadingResult.recordset[0] || null;
+            }
+
+            if (record.ballastingCargoTanks_ID) {
+                const ballastCargoResult = await pool.request()
+                    .input('id', record.ballastingCargoTanks_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_ballastingCargoTanks_formEntries] WHERE operationID = @id');
+                completeRecord.ballastCargoData = ballastCargoResult.recordset[0] || null;
+            }
+
+            if (record.additionalProcedures_ID) {
+                const additionalResult = await pool.request()
+                    .input('id', record.additionalProcedures_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_additionalProcedures_formEntries] WHERE operationID = @id');
+                completeRecord.additionalData = additionalResult.recordset[0] || null;
+            }
+
+            if (record.internalTransfer_ID) {
+                const internalResult = await pool.request()
+                    .input('id', record.internalTransfer_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_internalTransfer_formEntries] WHERE operationID = @id');
+                completeRecord.internalData = internalResult.recordset[0] || null;
+            }
+
+            if (record.dischargeSea_ID) {
+                const dischargeSeaResult = await pool.request()
+                    .input('id', record.dischargeSea_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_dischargeSea_formEntries] WHERE operationID = @id');
+                completeRecord.dischargeSeaData = dischargeSeaResult.recordset[0] || null;
+            }
+            if (record.cargoPrewash_ID) {
+                const cargoPrewashResult = await pool.request()
+                    .input('id', record.cargoPrewash_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_cargoPrewash_formEntries] WHERE operationID = @id');
+                completeRecord.cargoPrewashData = cargoPrewashResult.recordset[0] || null;
+            }
+            if (record.controlSurveyors_ID) {
+                const controlSurveyorsResult = await pool.request()
+                    .input('id', record.controlSurveyors_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_controlSurveyors_formEntries] WHERE operationID = @id');
+                completeRecord.controlSurveyorsData = controlSurveyorsResult.recordset[0] || null;
+            }
+            if (record.accidentalDischarge_ID) {
+                const accidentalDischargeResult = await pool.request()
+                    .input('id', record.accidentalDischarge_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_accidentalDischarge_formEntries] WHERE operationID = @id');
+                completeRecord.accidentalDischargeData = accidentalDischargeResult.recordset[0] || null;
+            }
+            if (record.dischargeBallastWater_ID) {
+                const dischargeSeaResult = await pool.request()
+                    .input('id', record.dischargeBallastWater_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_dischargeBallastWater_formEntries] WHERE operationID = @id');
+                completeRecord.dischargeSeaData = dischargeSeaResult.recordset[0] || null;
+            }
+            if (record.unloadingCargo_ID) {
+                const unloadingCargoResult = await pool.request()
+                    .input('id', record.unloadingCargo_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_unloadingCargo_formEntries] WHERE operationID = @id');
+                completeRecord.unloadingCargoData = unloadingCargoResult.recordset[0] || null;
+            }
+            if (record.cleaningCargoTanks_ID) {
+                const cleaningCargoTanksResult = await pool.request()
+                    .input('id', record.cleaningCargoTanks_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_cleaningCargoTanks_formEntries] WHERE operationID = @id');
+                completeRecord.cleaningCargoTanksData = cleaningCargoTanksResult.recordset[0] || null;
+            }
+            
+            completeRecords.push(completeRecord);
+        }
+        console.log("Complete result:", completeRecords);
+        function cleanResultRecords(records) {
+            return records.map(record => {
+                // Create a new object without the ID fields
+                const cleanRecord = {
+                    recordID: record.recordID,
+                    createdAt: record.createdAt,
+                    approvedBy: record.approvedBy,
+                    approvedStatus: record.approvedStatus,
+                    createdBy: record.createdBy,
+                    vesselID: record.vesselID,
+                    createdByName: record.createdByName,
+                    // Include any data objects that exist
+                    ...(record.loadingData && { loadingData: record.loadingData }),
+                    ...(record.ballastCargoData && { ballastCargoData: record.ballastCargoData }),
+                    ...(record.additionalData && { additionalData: record.additionalData }),
+                    ...(record.dischargeFacilityData && { dischargeFacilityData: record.dischargeFacilityData }),
+                    ...(record.internalData && { dischargeFacilityData: record.internalData }),
+                    ...(record.cargoPrewashData && { cargoPrewashData: record.cargoPrewashData }),
+                    ...(record.controlSurveyorsData && { controlSurveyorsData: record.controlSurveyorsData }),
+                    ...(record.accidentalDischargeData && { accidentalDischargeData: record.accidentalDischargeData }),
+                    ...(record.dischargeSeaData && { dischargeSeaData: record.dischargeSeaData }),
+                    ...(record.unloadingCargoData && { unloadingCargoData: record.unloadingCargoData }),
+                    ...(record.cleaningCargoTanksData && { cleaningCargoTanksData: record.cleaningCargoTanksData })
+                };
+
+                return cleanRecord;
+            });
+        }
+
+        // Usage:
+        const cleanedRecords = cleanResultRecords(completeRecords);
+
+
         console.log("Query result:", result.recordset.length, "records found.");
-        return result.recordset;
+        return cleanedRecords;
+
     } catch (err) {
         console.error("Database Fetch Error:", err.message);
         throw err;
