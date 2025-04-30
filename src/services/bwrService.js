@@ -174,8 +174,8 @@ async function createRecord5(data, vesselID) {
             .input("recordDate", data.recordDate)
             .input("recordTime", data.recordTime)
             .input("position", data.position)
-            .input("waterDepth", parseFloat(data.waterDepth))  // Ensuring decimal(5,2)
-            .input("estimatedUptakeVolume", parseFloat(data.estimatedUptakeVolume)) // Ensuring decimal(10,2)
+            .input("waterDepth", parseFloat(data.waterDepth) || 0)  // Ensuring decimal(5,2)
+            .input("estimatedUptakeVolume", parseFloat(data.estimatedUptakeVolume) || 0) // Ensuring decimal(10,2)
             .query(`
             INSERT INTO tbl_bwr_ballastWaterUptake_formEntries 
                 (recordDate, recordTime, position, waterDepth, estimatedUptakeVolume)
@@ -194,7 +194,7 @@ async function createRecord5(data, vesselID) {
             .input("approvedStatus", 0)
             .query(`
                 INSERT INTO tbl_bwr_ballastWater_main 
-                    (ballastWaterUptake_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (ballastWaterDischargeFacility_ID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -221,9 +221,80 @@ async function fetchRecords(vesselID) {
                 LEFT JOIN tbl_user u ON u.user_id = r.createdBy
                 WHERE vesselID = @vesselID
             `);
+        const mainRecords = result.recordset;
+        const completeRecords = [];
+
+        for (const record of mainRecords) {
+            const completeRecord = { ...record };
+
+            // Check each ID field and query the corresponding table if not null
+            if (record.ballastWaterUptake_ID) {
+                const uptakeResult = await pool.request()
+                    .input('id', record.ballastWaterUptake_ID)
+                    .query('SELECT * FROM tbl_bwr_ballastWaterUptake_formEntries WHERE operationID = @id');
+                completeRecord.uptakeData = uptakeResult.recordset[0] || null;
+            }
+
+            if (record.ballastWaterTreatment_ID) {
+                const treatmentResult = await pool.request()
+                    .input('id', record.ballastWaterTreatment_ID)
+                    .query('SELECT * FROM tbl_bwr_ballastWaterTreatment_formEntries WHERE operationID = @id');
+                completeRecord.treatmentData = treatmentResult.recordset[0] || null;
+            }
+
+            if (record.ballastWaterDischargeSea_ID) {
+                const dischargeSeaResult = await pool.request()
+                    .input('id', record.ballastWaterDischargeSea_ID)
+                    .query('SELECT * FROM tbl_bwr_ballastWaterDischargeSea_formEntries WHERE operationID = @id');
+                completeRecord.dischargeSeaData = dischargeSeaResult.recordset[0] || null;
+            }
+
+            if (record.ballastWaterDischargeFacility_ID) {
+                const dischargeFacilityResult = await pool.request()
+                    .input('id', record.ballastWaterDischargeFacility_ID)
+                    .query('SELECT * FROM tbl_bwr_ballastWaterDischargeFacility_formEntries WHERE operationID = @id');
+                completeRecord.dischargeFacilityData = dischargeFacilityResult.recordset[0] || null;
+            }
+
+            if (record.accidentalDischarge_ID) {
+                const accidentalResult = await pool.request()
+                    .input('id', record.accidentalDischarge_ID)
+                    .query('SELECT * FROM tbl_bwr_ballastWaterAccidentalDischarge_formEntries WHERE operationID = @id');
+                completeRecord.accidentalData = accidentalResult.recordset[0] || null;
+            }
+
+            completeRecords.push(completeRecord);
+        }
+        console.log("Complete result:", completeRecords);
+        function cleanResultRecords(records) {
+            return records.map(record => {
+                // Create a new object without the ID fields
+                const cleanRecord = {
+                    recordID: record.recordID,
+                    createdAt: record.createdAt,
+                    approvedBy: record.approvedBy,
+                    approvedStatus: record.approvedStatus,
+                    createdBy: record.createdBy,
+                    vesselID: record.vesselID,
+                    createdByName: record.createdByName,
+                    // Include any data objects that exist
+                    ...(record.uptakeData && { uptakeData: record.uptakeData }),
+                    ...(record.treatmentData && { treatmentData: record.treatmentData }),
+                    ...(record.dischargeSeaData && { dischargeSeaData: record.dischargeSeaData }),
+                    ...(record.dischargeFacilityData && { dischargeFacilityData: record.dischargeFacilityData }),
+                    ...(record.accidentalData && { accidentalData: record.accidentalData })
+                };
+
+                return cleanRecord;
+            });
+        }
+
+        // Usage:
+        const cleanedRecords = cleanResultRecords(completeRecords);
+
 
         console.log("Query result:", result.recordset.length, "records found.");
-        return result.recordset;
+        return cleanedRecords;
     } catch (err) {
         console.error("Database Fetch Error:", err.message);
         throw err;
