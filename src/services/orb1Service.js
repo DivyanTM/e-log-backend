@@ -33,7 +33,7 @@ async function createRecord1(data, vesselID) {
             .input("quantityBallastIfNotCleaned", !data.cleanedSinceLastOil ? parseFloat(data.quantityBallastIfNotCleaned) : null)
 
             .query(`
-            INSERT INTO [db_owner].[tbl_orb1_BallastingCleaning] (
+            INSERT INTO tbl_orb1_BallastingCleaning (
                 tankIdentity, cleanedSinceLastOil, cleaningProcessStartLatitude, cleaningProcessStartLongitude,
                 cleaningProcessStartTime, cleaningProcessEndLatitude, cleaningProcessEndLongitude,
                 cleaningProcessEndTime, tankNumber, tankForCleaningWaterTransfer, cleaningMethod,
@@ -59,7 +59,7 @@ async function createRecord1(data, vesselID) {
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
             .query(`
-                INSERT INTO  tbl_orb1_main 
+                INSERT INTO tbl_orb1_main 
                     (createdAt, createdBy, vesselID, ballastingCleaning_operationID, approvedStatus)
                 VALUES 
                     (@createdAt, @createdBy, @vesselID, @accidentalDischarge_ID, @approvedStatus)
@@ -85,7 +85,7 @@ async function createRecord2(data, vesselID) {
             .input("dischargeMethod", data.dischargeMethod)
             .input("quantityDischarged", parseFloat(data.quantityDischarged))
             .query(`
-            INSERT INTO [db_owner].[tbl_orb1_DischargeDirtyBallast] (
+            INSERT INTO tbl_orb1_DischargeDirtyBallast (
                 tankIdentity, startPosition, endPosition,
                 shipSpeedDuringDischarge, dischargeMethod, quantityDischarged
             )
@@ -105,7 +105,7 @@ async function createRecord2(data, vesselID) {
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
             .query(`
-                INSERT INTO  tbl_orb1_main 
+                INSERT INTO tbl_orb1_main 
                     (dischargeDirtyBallast_operationID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
@@ -137,7 +137,7 @@ async function createRecord3(data, vesselID) {
                 data.transferDisposalQuantityRetained !== undefined ? parseFloat(data.transferDisposalQuantityRetained) : null)
 
             .query(`
-            INSERT INTO [db_owner].[tbl_orb1_OilResidues] (
+            INSERT INTO tbl_orb1_OilResidues (
                 collectionTankIdentity, collectionTankCapacity, collectionTotalQuantityRetained,
                 collectionQuantityCollectedManually, transferDisposalMethod, transferDisposalQuantity,
                 transferDisposalTanksEmptied, transferDisposalQuantityRetained
@@ -160,7 +160,7 @@ async function createRecord3(data, vesselID) {
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
             .query(`
-                INSERT INTO  tbl_orb1_main 
+                INSERT INTO tbl_orb1_main 
                     (oilResidues_operationID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeSea_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
@@ -234,7 +234,7 @@ async function createRecord5(data, vesselID) {
             .input("systemPutToManualModeTime", data.systemPutToManualModeTime || null)
 
             .query(`
-            INSERT INTO [db_owner].[tbl_orb1_AutoBilgeWater] (
+            INSERT INTO tbl_orb1_AutoBilgeWater (
                 dischargeOverboardTime, dischargeOverboardLatitude, dischargeOverboardLongitude,
                 transferToHoldingTankTime, transferToHoldingTankLatitude, transferToHoldingTankLongitude,
                 systemPutToManualModeTime
@@ -257,7 +257,7 @@ async function createRecord5(data, vesselID) {
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
             .query(`
-                INSERT INTO  tbl_orb1_main 
+                INSERT INTO tbl_orb1_main 
                     (autoBilgeWater_operationID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
@@ -296,7 +296,7 @@ async function createRecord6(data, vesselID) {
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
             .query(`
-                INSERT INTO  tbl_orb1_main 
+                INSERT INTO tbl_orb1_main 
                     (oilFiltering_operationID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
@@ -322,7 +322,7 @@ async function createRecord7(data, vesselID) {
             .input("actionsTaken", data.actionsTaken)
             .input("remarks", data.remarks || null) // Optional field
             .query(`
-            INSERT INTO [db_owner].[tbl_orb1_AccidentalDischarges] (
+            INSERT INTO tbl_orb1_AccidentalDischarges (
                 timeOfOccurrence, latitude, longitude,
                 quantityOfOil, typeOfOil, circumstancesOfDischarge,
                 actionsTaken, remarks
@@ -344,7 +344,7 @@ async function createRecord7(data, vesselID) {
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
             .query(`
-                INSERT INTO  tbl_orb1_main 
+                INSERT INTO tbl_orb1_main 
                     (accidentalDischarges_operationID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
@@ -373,7 +373,7 @@ async function createRecord8(data, vesselID) {
             .input("lubricatingOilTotalContent", data.lubricatingOilTotalContent !== undefined ? parseFloat(data.lubricatingOilTotalContent) : null)
             .input("lubricatingOilTankIdentity", data.lubricatingOilTankIdentity || null)
             .query(`
-            INSERT INTO [db_owner].[tbl_orb1_Bunkering] (
+            INSERT INTO tbl_orb1_Bunkering (
                 placeOfBunkering, timeOfBunkering,
                 fuelOilType, fuelOilQuantityAdded, fuelOilTotalContent, fuelOilTankIdentity,
                 lubricatingOilType, lubricatingOilQuantityAdded, lubricatingOilTotalContent, lubricatingOilTankIdentity
@@ -397,7 +397,7 @@ async function createRecord8(data, vesselID) {
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
             .query(`
-                INSERT INTO  tbl_orb1_main 
+                INSERT INTO tbl_orb1_main 
                     (bunkering_operationID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
@@ -433,7 +433,7 @@ async function createRecord9(data, vesselID) {
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
             .query(`
-                INSERT INTO  tbl_orb1_main 
+                INSERT INTO tbl_orb1_main 
                     (additionalRemarks_operationID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
@@ -474,8 +474,111 @@ async function fetchRecords(vesselID) {
         WHERE r.vesselID = @vesselID
             `);
 
+
+        const mainRecords = result.recordset;
+        const completeRecords = [];
+
+        for (const record of mainRecords) {
+            const completeRecord = { ...record };
+
+            // Check each ID field and query the corresponding table if not null
+            if (record.ballastingCleaning_operationID) {
+                const ballastingCleaningResult = await pool.request()
+                    .input('id', record.ballastingCleaning_operationID)
+                    .query('SELECT * FROM [db_owner].[tbl_orb1_BallastingCleaning] WHERE operationID = @id');
+                completeRecord.ballastingCleaningData = ballastingCleaningResult.recordset[0] || null;
+            }
+
+            if (record.dischargeDirtyBallast_operationID) {
+                const dischargeDirtyBallastResult = await pool.request()
+                    .input('id', record.dischargeDirtyBallast_operationID)
+                    .query('SELECT * FROM [db_owner].[tbl_orb1_DischargeDirtyBallast] WHERE operationID = @id');
+                completeRecord.dischargeDirtyBallastData = dischargeDirtyBallastResult.recordset[0] || null;
+            }
+
+            if (record.oilResidues_operationID) {
+                const oilResiduesResult = await pool.request()
+                    .input('id', record.oilResidues_operationID)
+                    .query('SELECT * FROM [db_owner].[tbl_orb1_OilResidues] WHERE operationID = @id');
+                completeRecord.oilResiduesData = oilResiduesResult.recordset[0] || null;
+            }
+
+            if (record.nonAutoBilgeWater_operationID) {
+                const nonAutoBilgeWaterResult = await pool.request()
+                    .input('id', record.nonAutoBilgeWater_operationID)
+                    .query('SELECT * FROM [db_owner].[tbl_orb1_NonAutoBilgeWater] WHERE operationID = @id');
+                completeRecord.nonAutoBilgeWaterData = nonAutoBilgeWaterResult.recordset[0] || null;
+            }
+
+            if (record.autoBilgeWater_operationID) {
+                const autoBilgeWaterResult = await pool.request()
+                    .input('id', record.autoBilgeWater_operationID)
+                    .query('SELECT * FROM [db_owner].[tbl_orb1_AutoBilgeWater] WHERE operationID = @id');
+                completeRecord.autoBilgeWaterData = autoBilgeWaterResult.recordset[0] || null;
+            }
+            if (record.oilFiltering_operationID) {
+                const oilFilteringResult = await pool.request()
+                    .input('id', record.oilFiltering_operationID)
+                    .query('SELECT * FROM [db_owner].[tbl_orb1_OilFiltering] WHERE operationID = @id');
+                completeRecord.oilFilteringData = oilFilteringResult.recordset[0] || null;
+            }
+            if (record.accidentalDischarges_operationID) {
+                const accidentalDischargesResult = await pool.request()
+                    .input('id', record.accidentalDischarges_operationID)
+                    .query('SELECT * FROM [db_owner].[tbl_orb1_AccidentalDischarges] WHERE operationID = @id');
+                completeRecord.accidentalDischargesData = accidentalDischargesResult.recordset[0] || null;
+            }
+            if (record.bunkering_operationID) {
+                const bunkeringResult = await pool.request()
+                    .input('id', record.bunkering_operationID)
+                    .query('SELECT * FROM [db_owner].[tbl_orb1_Bunkering] WHERE operationID = @id');
+                completeRecord.bunkeringData = bunkeringResult.recordset[0] || null;
+            }
+            if (record.additionalRemarks_operationID) {
+                const additionalRemarksResult = await pool.request()
+                    .input('id', record.additionalRemarks_operationID)
+                    .query('SELECT * FROM [db_owner].[tbl_orb1_AdditionalRemarks] WHERE operationID = @id');
+                completeRecord.additionalRemarksData = additionalRemarksResult.recordset[0] || null;
+            }
+    
+
+            completeRecords.push(completeRecord);
+        }
+        console.log("Complete result:", completeRecords);
+        function cleanResultRecords(records) {
+            return records.map(record => {
+                // Create a new object without the ID fields
+                const cleanRecord = {
+                    recordID: record.recordID,
+                    createdAt: record.createdAt,
+                    approvedBy: record.approvedBy,
+                    approvedStatus: record.approvedStatus,
+                    createdBy: record.createdBy,
+                    vesselID: record.vesselID,
+                    createdByName: record.createdByName,
+                    // Include any data objects that exist
+     
+                    ...(record.ballastingCleaningData && { ballastingCleaningData: record.ballastingCleaningData }),
+                    ...(record.dischargeDirtyBallastData && { dischargeDirtyBallastData: record.dischargeDirtyBallastData }),
+                    ...(record.oilResiduesData && { oilResiduesData: record.oilResiduesData }),
+                    ...(record.nonAutoBilgeWaterData && { nonAutoBilgeWaterData: record.nonAutoBilgeWaterData }),
+                    ...(record.autoBilgeWaterData && { autoBilgeWaterData: record.autoBilgeWaterData }),
+                    ...(record.oilFilteringData && { oilFilteringData: record.oilFilteringData }),
+                    ...(record.accidentalDischargesData && { accidentalDischargesData: record.accidentalDischargesData }),
+                    ...(record.bunkeringData && { bunkeringData: record.bunkeringData }),
+                    ...(record.additionalRemarksData && { additionalRemarksData: record.additionalRemarksData })
+                };
+
+                return cleanRecord;
+            });
+        }
+
+        // Usage:
+        const cleanedRecords = cleanResultRecords(completeRecords);
+
+
         console.log("Query result:", result.recordset.length, "records found.");
-        return result.recordset;
+        return cleanedRecords;
     } catch (err) {
         console.error("Database Fetch Error:", err.message);
         throw err;
