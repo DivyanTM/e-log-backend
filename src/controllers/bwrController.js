@@ -44,7 +44,7 @@ async function createRecord(req, res) {
             if (!data.position) missingFields.push("position");
             if (!data.estimatedDischargedVolume) missingFields.push("estimatedDischargedVolume");
             if (!data.circumstancesRemarks) missingFields.push("circumstancesRemarks");
-            if (data.conformBWMPlan === undefined || data.conformBWMPlan === null) missingFields.push("conformBWMPlan");
+            if (data.conformBWMPlan !== 0 && data.conformBWMPlan !== 1) missingFields.push("conformBWMPlan");
             if (!data.createdBy) missingFields.push("createdBy");
 
             if (missingFields.length > 0) {
@@ -57,10 +57,7 @@ async function createRecord(req, res) {
                 return res.status(400).json({ message: "Estimated discharged volume must be a number" });
             }
 
-            if (typeof data.conformBWMPlan !== 'boolean') {
-                return res.status(400).json({ message: "Conform BWM Plan must be a boolean value" });
-            }
-
+           
             const success = await bwrService.createRecord1(data, vesselID);
 
             if (success) {
@@ -75,7 +72,6 @@ async function createRecord(req, res) {
             throw err;
         }
     }
-
     async function createRecord2(req, res) {
         try {
             const data = req.body.operationData;
