@@ -64,7 +64,8 @@ async function createRecord(data, vesselID) {
         const request = await pool.request();
         request.input('vesselID', vesselID)
             .input('createdBy', data.createdBy)
-            .input('approvedBy', data.approvedBy ?? null)
+            .input('verifiedBy', data.createdBy)
+            .input('approvedBy', data.createdBy)
             .input('approvedStatus', data.approvedStatus ?? 0)
             .input('begin_LSFO_datetime', data.begin_LSFO_datetime)
             .input('begin_LSFO_latitude', data.begin_LSFO_latitude)
@@ -85,11 +86,14 @@ async function createRecord(data, vesselID) {
             .input('complete_HSFO_datetime', data.complete_HSFO_datetime)
             .input('complete_HSFO_latitude', data.complete_HSFO_latitude)
             .input('complete_HSFO_longitude', data.complete_HSFO_longitude)
+            .input("createdAt", new Date())
+            .input("verifiedAt", new Date())
+
             .input('lsfo_volume_start', data.lsfo_volume_start);
 
         const result = await request.query(`
             INSERT INTO dbo.tbl_lsfo_changeover (
-                vesselID, createdBy, approvedBy, approvedStatus,
+                vesselID, createdBy, approvedBy, approvedStatus,verifiedBy, createdAt, verifiedAt, 
                 begin_LSFO_datetime, begin_LSFO_latitude, begin_LSFO_longitude,
                 complete_LSFO_datetime, complete_LSFO_latitude, complete_LSFO_longitude,
                 lsfo_volume_completion, regulated_entry_datetime, regulated_entry_latitude, regulated_entry_longitude,

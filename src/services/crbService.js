@@ -13,6 +13,7 @@ async function createRecord1(data, vesselID) {
             .input("category", data.category)
             .input("circumstances", data.circumstances)
             .input("remarks", data.remarks)
+
             .query(`
         INSERT INTO tbl_crb_accidentalDischarge_formEntries 
             (occurrenceTime, quantity, substance, category, circumstances, remarks)
@@ -29,9 +30,12 @@ async function createRecord1(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (createdAt, createdBy, vesselID, accidentalDischarge_ID, approvedStatus)
+                    (createdAt, createdBy, vesselID,verifiedBy, approvedBy, verifiedAt, accidentalDischarge_ID, approvedStatus)
                 VALUES 
                     (@createdAt, @createdBy, @vesselID, @accidentalDischarge_ID, @approvedStatus)
             `);
@@ -67,9 +71,12 @@ async function createRecord2(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (additionalProcedures_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (additionalProcedures_ID, createdAt,verifiedBy, approvedBy, verifiedAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -102,9 +109,12 @@ async function createRecord3(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (ballastingCargoTanks_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (ballastingCargoTanks_ID, createdAt,verifiedBy, approvedBy, verifiedAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeSea_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -146,9 +156,12 @@ async function createRecord4(data, vesselID) {
                 .input("createdBy", data.createdBy)
                 .input("vesselID", vesselID)
                 .input("approvedStatus", 0)
+                .input("verifiedBy", data.createdBy)
+                .input("approvedBy", data.createdBy)
+                .input("verifiedAt", new Date())
                 .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (cargoPrewash_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (cargoPrewash_ID, createdAt, createdBy,verifiedBy, approvedBy, verifiedAt, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -198,9 +211,12 @@ async function createRecord5(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (cleaningCargoTanks_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (cleaningCargoTanks_ID, createdAt, createdBy,verifiedBy, approvedBy, verifiedAt, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -252,9 +268,12 @@ async function createRecord6(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (controlSurveyors_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (controlSurveyors_ID, createdAt, createdBy, vesselID,verifiedBy, approvedBy, verifiedAt, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -295,10 +314,13 @@ async function createRecord7(data, vesselID) {
             .input("createdAt", new Date())
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .input("approvedStatus", 0)
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (dischargeBallastWater_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (dischargeBallastWater_ID, createdAt, createdBy,verifiedBy, approvedBy, verifiedAt, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -339,10 +361,13 @@ async function createRecord8(data, vesselID) {
             .input("createdAt", new Date())
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .input("approvedStatus", 0)
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (dischargeSea_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (dischargeSea_ID, createdAt, createdBy, vesselID,verifiedBy, approvedBy, verifiedAt, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -381,9 +406,12 @@ async function createRecord9(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (internalTransfer_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (internalTransfer_ID, createdAt, createdBy, vesselID, verifiedBy, approvedBy, verifiedAt,approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -425,9 +453,12 @@ async function createRecord10(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (unloadingCargo_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (unloadingCargo_ID, createdAt, createdBy, vesselID,verifiedBy, approvedBy, verifiedAt, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -463,9 +494,13 @@ async function createRecord11(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
+
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (loadingCargo_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (loadingCargo_ID, createdAt, createdBy, vesselID,verifiedBy, approvedBy, verifiedAt, approvedStatus)
                 VALUES 
                     (@loadingCargo_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);

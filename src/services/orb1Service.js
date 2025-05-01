@@ -57,10 +57,13 @@ async function createRecord1(data, vesselID) {
             .input("createdAt", new Date())
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .input("approvedStatus", 0)
             .query(`
                 INSERT INTO tbl_orb1_main 
-                    (createdAt, createdBy, vesselID, ballastingCleaning_operationID, approvedStatus)
+                    (createdAt, createdBy, verifiedBy, approvedBy, verifiedAt,vesselID, ballastingCleaning_operationID, approvedStatus)
                 VALUES 
                     (@createdAt, @createdBy, @vesselID, @accidentalDischarge_ID, @approvedStatus)
             `);
@@ -103,10 +106,13 @@ async function createRecord2(data, vesselID) {
             .input("createdAt", new Date())
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .input("approvedStatus", 0)
             .query(`
                 INSERT INTO tbl_orb1_main 
-                    (dischargeDirtyBallast_operationID, createdAt, createdBy, vesselID, approvedStatus)
+                    (dischargeDirtyBallast_operationID,verifiedBy, approvedBy, verifiedAt, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -158,10 +164,13 @@ async function createRecord3(data, vesselID) {
             .input("createdAt", new Date())
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .input("approvedStatus", 0)
             .query(`
                 INSERT INTO tbl_orb1_main 
-                    (oilResidues_operationID, createdAt, createdBy, vesselID, approvedStatus)
+                    (oilResidues_operationID, createdAt, verifiedBy, approvedBy, verifiedAt,createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeSea_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -202,9 +211,12 @@ async function createRecord4(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_orb1_main 
-                    (nonAutoBilgeWater_operationID, createdAt, createdBy, vesselID, approvedStatus)
+                    (nonAutoBilgeWater_operationID, createdAt,verifiedBy, approvedBy, verifiedAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -256,9 +268,12 @@ async function createRecord5(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO tbl_orb1_main 
-                    (autoBilgeWater_operationID, createdAt, createdBy, vesselID, approvedStatus)
+                    (autoBilgeWater_operationID, createdAt,verifiedBy, approvedBy, verifiedAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -295,9 +310,12 @@ async function createRecord6(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO tbl_orb1_main 
-                    (oilFiltering_operationID, createdAt, createdBy, vesselID, approvedStatus)
+                    (oilFiltering_operationID, createdAt,verifiedBy, approvedBy, verifiedAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -345,7 +363,7 @@ async function createRecord7(data, vesselID) {
             .input("approvedStatus", 0)
             .query(`
                 INSERT INTO tbl_orb1_main 
-                    (accidentalDischarges_operationID, createdAt, createdBy, vesselID, approvedStatus)
+                    (accidentalDischarges_operationID, createdAt,verifiedBy, approvedBy, verifiedAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -396,9 +414,12 @@ async function createRecord8(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO tbl_orb1_main 
-                    (bunkering_operationID, createdAt, createdBy, vesselID, approvedStatus)
+                    (bunkering_operationID, createdAt, createdBy,verifiedBy, approvedBy, verifiedAt, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -431,10 +452,14 @@ async function createRecord9(data, vesselID) {
             .input("createdAt", new Date())
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
+
             .input("approvedStatus", 0)
             .query(`
                 INSERT INTO tbl_orb1_main 
-                    (additionalRemarks_operationID, createdAt, createdBy, vesselID, approvedStatus)
+                    (additionalRemarks_operationID, createdAt, createdBy,verifiedBy, approvedBy, verifiedAt, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);

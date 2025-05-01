@@ -32,9 +32,12 @@ async function createRecord1(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO tbl_bwr_ballastWater_main 
-                    (createdAt, createdBy, vesselID, accidentalDischarge_ID, approvedStatus)
+                    (createdAt, createdBy, vesselID, verifiedBy, createdAt, verifiedAt, accidentalDischarge_ID, approvedStatus)
                 VALUES 
                     (@createdAt, @createdBy, @vesselID, @accidentalDischarge_ID, @approvedStatus)
             `);
@@ -75,9 +78,12 @@ async function createRecord2(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO tbl_bwr_ballastWater_main 
-                    (ballastWaterDischargeFacility_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (ballastWaterDischargeFacility_ID, createdAt,verifiedBy, createdAt, verifiedAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -115,9 +121,12 @@ async function createRecord3(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO tbl_bwr_ballastWater_main 
-                    (ballastWaterDischargeSea_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (ballastWaterDischargeSea_ID, createdAt, verifiedBy, createdAt, verifiedAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeSea_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -154,9 +163,12 @@ async function createRecord4(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO tbl_bwr_ballastWater_main 
-                    (ballastWaterTreatment_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (ballastWaterTreatment_ID, createdAt, createdBy,verifiedBy, createdAt, verifiedAt, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -190,11 +202,16 @@ async function createRecord5(data, vesselID) {
             .input("ballastWaterDischargeFacility_ID", operationID)
             .input("createdAt", new Date())
             .input("createdBy", data.createdBy)
+
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
+
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
             .query(`
                 INSERT INTO tbl_bwr_ballastWater_main 
-                    (ballastWaterDischargeFacility_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (ballastWaterDischargeFacility_ID, createdAt, createdBy,verifiedBy, approvedBy, verifiedAt, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
