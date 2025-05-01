@@ -484,7 +484,7 @@ async function fetchRecords(vesselID) {
             .query(`
                 SELECT  
     r.recordID, r.createdAt, r.approvedBy, r.approvedStatus,  
-    r.createdBy, r.vesselID, r.loadingCargo_ID,  
+    r.createdBy, r.vesselID, r.loadingCargo_ID, r.verifiedBy, r.verifiedAt, r.verificationStatus, r.verificationRemarks,
     r.ballastingCargoTanks_ID, r.additionalProcedures_ID,  
     r.internalTransfer_ID, r.dischargeSea_ID,  
     r.cargoPrewash_ID, r.controlSurveyors_ID,  
@@ -573,7 +573,7 @@ WHERE vesselID = @vesselID
                     .query('SELECT * FROM [dbo].[tbl_crb_cleaningCargoTanks_formEntries] WHERE operationID = @id');
                 completeRecord.cleaningCargoTanksData = cleaningCargoTanksResult.recordset[0] || null;
             }
-            
+
             completeRecords.push(completeRecord);
         }
         console.log("Complete result:", completeRecords);
@@ -588,6 +588,10 @@ WHERE vesselID = @vesselID
                     createdBy: record.createdBy,
                     vesselID: record.vesselID,
                     createdByName: record.createdByName,
+                    verifiedBy: record.verifiedBy,
+                    verifiedAt: record.verifiedAt,
+                    verificationStatus: record.verificationStatus,
+                    verificationRemarks: record.verificationRemarks,
                     // Include any data objects that exist
                     ...(record.loadingData && { loadingData: record.loadingData }),
                     ...(record.ballastCargoData && { ballastCargoData: record.ballastCargoData }),
