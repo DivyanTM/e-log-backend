@@ -15,19 +15,41 @@ async function getRecords(vesselID) {
         const result = await pool.request()
             .input('vesselID', vesselID)
             .query(`
-                SELECT 
-                    r.recordID, r.createdAt, r.approvedBy, r.approvedStatus, 
-                    r.createdBy, r.vesselID, r.begin_LSFO_datetime, r.begin_LSFO_latitude, 
-                    r.begin_LSFO_longitude, r.complete_LSFO_datetime, r.complete_LSFO_latitude, 
-                    r.complete_LSFO_longitude, r.lsfo_volume_completion, r.regulated_entry_datetime, 
-                    r.regulated_entry_latitude, r.regulated_entry_longitude, r.regulated_exit_datetime, 
-                    r.regulated_exit_latitude, r.regulated_exit_longitude, r.begin_HSFO_datetime, 
-                    r.begin_HSFO_latitude, r.begin_HSFO_longitude, r.complete_HSFO_datetime, 
-                    r.complete_HSFO_latitude, r.complete_HSFO_longitude, r.lsfo_volume_start, 
-                    u.fullName AS createdByName
-                FROM tbl_lsfo_changeover r
-                JOIN tbl_user u ON r.createdBy = u.user_id
-                WHERE r.vesselID = @vesselID;
+            SELECT 
+            r.recordID, 
+            r.createdAt, 
+            r.approvedBy, 
+            r.approvedStatus,
+            r.verifiedBy, 
+            r.createdBy,
+            r.verifiedAt, 
+            r.verificationStatus, 
+            r.verificationRemarks,
+            r.vesselID, 
+            r.begin_LSFO_datetime, 
+            r.begin_LSFO_latitude, 
+            r.begin_LSFO_longitude, 
+            r.complete_LSFO_datetime, 
+            r.complete_LSFO_latitude, 
+            r.complete_LSFO_longitude, 
+            r.lsfo_volume_completion, 
+            r.regulated_entry_datetime, 
+            r.regulated_entry_latitude, 
+            r.regulated_entry_longitude, 
+            r.regulated_exit_datetime, 
+            r.regulated_exit_latitude, 
+            r.regulated_exit_longitude, 
+            r.begin_HSFO_datetime, 
+            r.begin_HSFO_latitude, 
+            r.begin_HSFO_longitude, 
+            r.complete_HSFO_datetime, 
+            r.complete_HSFO_latitude, 
+            r.complete_HSFO_longitude, 
+            r.lsfo_volume_start, 
+            COALESCE(u.fullname, 'Unknown') AS createdByName
+        FROM tbl_lsfo_changeover r
+        LEFT JOIN tbl_user u ON u.user_id = r.createdBy
+        WHERE r.vesselID = @vesselID
             `);
 
         return result.recordset;
