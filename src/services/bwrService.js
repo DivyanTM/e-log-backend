@@ -212,7 +212,7 @@ async function fetchRecords(vesselID) {
             .input('vesselID', vesselID)
             .query(`
                 SELECT 
-                    r.recordID, r.createdAt, r.approvedBy, r.approvedStatus, 
+                    r.recordID, r.createdAt, r.approvedBy, r.approvedStatus, r.verifiedBy, r.verifiedAt, r.verificationStatus, r.verificationRemarks, 
                     r.createdBy, r.vesselID, r.ballastWaterUptake_ID, 
                     r.ballastWaterTreatment_ID, r.ballastWaterDischargeSea_ID, 
                     r.ballastWaterDischargeFacility_ID, r.accidentalDischarge_ID, 
@@ -277,6 +277,10 @@ async function fetchRecords(vesselID) {
                     createdBy: record.createdBy,
                     vesselID: record.vesselID,
                     createdByName: record.createdByName,
+                    verifiedBy: record.verifiedBy,
+                    verifiedAt: record.verifiedAt,
+                    verificationStatus: record.verificationStatus,
+                    verificationRemarks: record.verificationRemarks,
                     // Include any data objects that exist
                     ...(record.uptakeData && { uptakeData: record.uptakeData }),
                     ...(record.treatmentData && { treatmentData: record.treatmentData }),
