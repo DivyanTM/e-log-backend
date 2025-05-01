@@ -176,13 +176,13 @@ async function createRecord4(data, vesselID) {
     const pool = await getPool();
     try {
 
-            const formResult = await pool.request()
-                .input("tankIdentity", data.tankIdentity)
-                .input("tankCapacity", parseFloat(data.tankCapacity))
-                .input("totalQuantityRetention", parseFloat(data.totalQuantityRetention))
-                .input("quantityResidueCollectedManually",data.quantityResidueCollectedManually)
-                .input("methodsTransferDisposal",data.methodsTransferDisposal)
-                .query(`
+        const formResult = await pool.request()
+            .input("tankIdentity", data.tankIdentity)
+            .input("tankCapacity", parseFloat(data.tankCapacity))
+            .input("totalQuantityRetention", parseFloat(data.totalQuantityRetention))
+            .input("quantityResidueCollectedManually", data.quantityResidueCollectedManually)
+            .input("methodsTransferDisposal", data.methodsTransferDisposal)
+            .query(`
                 INSERT INTO [db_owner].[tbl_orb1_NonAutoBilgeWater] (
                     tankIdentity, tankCapacity, totalQuantityRetention,
                     quantityResidueCollectedManually, methodsTransferDisposal
@@ -193,24 +193,24 @@ async function createRecord4(data, vesselID) {
                     @quantityResidueCollectedManually, @methodsTransferDisposal
                 )
             `);
-            const operationID = formResult.recordset?.[0]?.operationID;
-            if (!operationID) throw new Error("Failed to retrieve operationID");
+        const operationID = formResult.recordset?.[0]?.operationID;
+        if (!operationID) throw new Error("Failed to retrieve operationID");
 
-            await pool.request()
-                .input("ballastWaterDischargeFacility_ID", operationID)
-                .input("createdAt", new Date())
-                .input("createdBy", data.createdBy)
-                .input("vesselID", vesselID)
-                .input("approvedStatus", 0)
-                .query(`
+        await pool.request()
+            .input("ballastWaterDischargeFacility_ID", operationID)
+            .input("createdAt", new Date())
+            .input("createdBy", data.createdBy)
+            .input("vesselID", vesselID)
+            .input("approvedStatus", 0)
+            .query(`
                 INSERT INTO  tbl_orb1_main 
                     (nonAutoBilgeWater_operationID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
 
-            return { success: true, operationID };
-        
+        return { success: true, operationID };
+
     } catch (err) {
         console.error("Ballast Water Discharge Facility Service Error:", err.message);
         throw err;
@@ -458,7 +458,7 @@ async function fetchRecords(vesselID) {
             r.approvedBy, 
             r.approvedStatus,  
             r.createdBy, 
-            r.vesselID, 
+            r.vesselID,r.verifiedBy, r.verifiedAt, r.verificationStatus, r.verificationRemarks, 
             r.ballastingCleaning_operationID,
             r.dischargeDirtyBallast_operationID,
             r.oilResidues_operationID,
@@ -540,7 +540,7 @@ async function fetchRecords(vesselID) {
                     .query('SELECT * FROM [db_owner].[tbl_orb1_AdditionalRemarks] WHERE operationID = @id');
                 completeRecord.additionalRemarksData = additionalRemarksResult.recordset[0] || null;
             }
-    
+
 
             completeRecords.push(completeRecord);
         }
@@ -556,8 +556,12 @@ async function fetchRecords(vesselID) {
                     createdBy: record.createdBy,
                     vesselID: record.vesselID,
                     createdByName: record.createdByName,
+                    verifiedBy: record.verifiedBy,
+                    verifiedAt: record.verifiedAt,
+                    verificationStatus: record.verificationStatus,
+                    verificationRemarks: record.verificationRemarks,
                     // Include any data objects that exist
-     
+
                     ...(record.ballastingCleaningData && { ballastingCleaningData: record.ballastingCleaningData }),
                     ...(record.dischargeDirtyBallastData && { dischargeDirtyBallastData: record.dischargeDirtyBallastData }),
                     ...(record.oilResiduesData && { oilResiduesData: record.oilResiduesData }),
