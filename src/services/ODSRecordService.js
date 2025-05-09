@@ -46,31 +46,58 @@ function flattenObject(obj, parent = "", res = {}) {
   }
   
   function formatDates(obj) {
-    const isDate = (val) => /^\d{4}-\d{2}-\d{2}$/.test(val);
-    const isTime = (val) => /^\d{2}:\d{2}:\d{2}$/.test(val);
-    const isDateTime = (val) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?$/.test(val);
+    const pad = (num) => String(num).padStart(2, '0');
+  
+    const formatDateTime = (date) => {
+      const yyyy = date.getFullYear();
+      const mm = pad(date.getMonth() + 1);
+      const dd = pad(date.getDate());
+      const hh = pad(date.getHours());
+      const min = pad(date.getMinutes());
+      const ss = pad(date.getSeconds());
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+    };
+  
+    const formatDate = (date) => {
+      const yyyy = date.getFullYear();
+      const mm = pad(date.getMonth() + 1);
+      const dd = pad(date.getDate());
+      return `${yyyy}-${mm}-${dd}`;
+    };
+  
+    const formatTime = (date) => {
+      const hh = pad(date.getHours());
+      const min = pad(date.getMinutes());
+      const ss = pad(date.getSeconds());
+      return `${hh}:${min}:${ss}`;
+    };
   
     for (const key in obj) {
       const val = obj[key];
   
       if (val instanceof Date) {
-        obj[key] = val.toLocaleString();
-      } else if (typeof val === "string") {
-        if (isDateTime(val)) {
-          const date = new Date(val);
-          obj[key] = date.toLocaleString(); 
-        } else if (isDate(val)) {
-          const date = new Date(val + "T00:00:00");
-          obj[key] = date.toLocaleDateString(); 
-        } else if (isTime(val)) {
-          const date = new Date("1970-01-01T" + val);
-          obj[key] = date.toLocaleTimeString(); 
+        obj[key] = formatDateTime(val);
+      } else if (typeof val === 'string') {
+        const parsed = new Date(val);
+        if (!isNaN(parsed.getTime())) {
+          const hasTime = parsed.getHours() + parsed.getMinutes() + parsed.getSeconds() > 0;
+  
+          if (val.includes('T')) {
+            obj[key] = formatDateTime(parsed); // full datetime string
+          } else if (!hasTime) {
+            obj[key] = formatDate(parsed); // pure date
+          } else {
+            obj[key] = formatTime(parsed); // time only
+          }
         }
       }
     }
   
     return obj;
   }
+  
+  
+  
   function renameKeys(obj, keyMap) {
     for (const oldKey in keyMap) {
       if (obj.hasOwnProperty(oldKey)) {
@@ -90,17 +117,24 @@ async function getODSRecordsByOperation(vesselId) {
             .request()
             .input("vesselId", sql.Int, vesselId)
             .query(`
-                SELECT 
-    ods.*,
-    u.fullname AS createdby
-FROM 
-    tbl_ODSOperation AS ods
-LEFT JOIN 
-    tbl_user AS u ON ods.createdby = u.user_id
-WHERE 
-    ods.vesselId = @vesselId
-ORDER BY 
-    ods.createdAt DESC;
+             SELECT 
+    ods.ODSRecordId,
+    ods.ODSEquipmentId,
+    ods.operationName,
+    ods.approvalStatus,
+    ods.approvedby,
+    ods.verifiedBy,
+    ods.verificationStatus,
+    ods.verficationRemarks,
+    ods.verifiedAt,
+    ods.createdAt,
+    created.fullname AS createdBy
+
+FROM tbl_ODSOperation AS ods
+LEFT JOIN tbl_user AS created ON created.user_id = ods.createdBy
+WHERE ods.vesselId = @vesselId
+ORDER BY ods.createdAt DESC;
+
 
                 `);
         let records = result.recordset;
@@ -114,7 +148,7 @@ ORDER BY
               .query("SELECT * FROM ODSEquipment WHERE operationId = @operationId");
           
             let details = formatDates({ ...mainRes.recordset[0] });
-            details = flattenObject(details);
+            details = flattenObject(formatDates(details));
             details = prettifyKeys(details);
           
             delete details["Operation Id"]; 
@@ -168,7 +202,7 @@ async function insertODSRecord(data) {
     try {
         const r = data.records;
 
-        // Validation
+        
         const requiredFields = [
             
             { field: 'date', value: r.date, type: 'string' },
@@ -222,31 +256,26 @@ async function insertODSRecord(data) {
                 SELECT SCOPE_IDENTITY() AS operationId;
             `);
          const operationId = result.recordset[0].operationId;
-                const approvedby = 1;
-            const approvalStatus = 0;
-            const verificationStatus =0;
-            const verifiedBy= 2;
-            const verficationRemarks = `verified`;
+              
+            
             const result2 = await pool.request()
-              .input('approvedby', sql.Int, approvedby)
-              .input('approvalStatus', sql.Int, approvalStatus)
+              
+              .input('approvalStatus', sql.Int, 0)
+              .input('verificationStatus',sql.Int,0)
               .input('createdBy', sql.Int,r.userId )
               .input('vesselId', sql.Int, r.vesselId)
-              .input('verifiedBy', sql.Int, verifiedBy)
-              .input('verifiedAt', sql.DateTime, new Date())
-              .input('verificationStatus', sql.Int, verificationStatus)
-              .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+         
               .input('ReallocationBallastWater_id', sql.Int, operationId)
               .input('operationName',sql.NVarChar(250),r.operation2)
               .query(`
                 INSERT INTO tbl_ODSOperation (
-                  approvedby, approvalStatus, createdBy, vesselId, 
-                  verifiedBy,verifiedAt,  verificationStatus, verficationRemarks,
+                  approvalStatus, createdBy, vesselId, 
+                    verificationStatus, 
                   ODSrecordId,operationName
                 )
                 VALUES (
-                  @approvedby, @approvalStatus, @createdBy, @vesselId, 
-                  @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+                   @approvalStatus, @createdBy, @vesselId, 
+                   @verificationStatus, 
                   @ReallocationBallastWater_id, @operationName
                 )
               `);
@@ -319,31 +348,26 @@ async function insertODSEquipment(data) {
                 SELECT SCOPE_IDENTITY() AS operationId;
                 `);
             const operationId = result.recordset[0].operationId;
-            const approvedby = 1;
+            
         const approvalStatus = 0;
-        const verificationStatus =0;
-        const verifiedBy= 2;
-        const verficationRemarks = `verified`;
+       
         const result2 = await pool.request()
-          .input('approvedby', sql.Int, approvedby)
+          
           .input('approvalStatus', sql.Int, approvalStatus)
+          .input('verificationStatus',sql.Int,0)
           .input('createdBy', sql.Int,e.userId )
           .input('vesselId', sql.Int, e.vesselId)
-          .input('verifiedBy', sql.Int, verifiedBy)
-          .input('verifiedAt', sql.DateTime, new Date())
-          .input('verificationStatus', sql.Int, verificationStatus)
-          .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
           .input('ReallocationBallastWater_id', sql.Int, operationId)
           .input('operationName',sql.NVarChar(250),e.operation1)
           .query(`
             INSERT INTO tbl_ODSOperation (
-              approvedby, approvalStatus, createdBy, vesselId, 
-              verifiedBy,verifiedAt,  verificationStatus, verficationRemarks,
+               approvalStatus, createdBy, vesselId, 
+                verificationStatus, 
               ODSEquipmentId,operationName
             )
             VALUES (
-              @approvedby, @approvalStatus, @createdBy, @vesselId, 
-              @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+               @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus,
               @ReallocationBallastWater_id, @operationName
             );
             
@@ -372,5 +396,144 @@ async function insertODSEquipment(data) {
     }
 }
 
+async function getAllUnverifiedRecords(vesselID){
+  try{
 
-export  {  insertODSRecord, insertODSEquipment,  getODSRecordsByOperation };
+      const request = pool.request();
+      request.input('vesselID',vesselID);
+
+      let query=`
+          select 'ODS Record Book' as recordName,t. *,u.fullname from tbl_ODSOperation t
+                                                              left join tbl_user u on u.user_id=t.createdBy
+          where t.verificationStatus=0 and t.vesselID=@vesselID;
+      
+      `;
+
+      const result = await request.query(query);
+
+      if(result.recordset.length>0){
+          return result.recordset;
+      }
+
+      return [];
+
+  }catch(err){
+      console.log("FOS service : ",err);
+      throw new Error(`Database error: ${err.message}`);
+  }
+}
+
+async function setRecordVerified(recordId, verifiedBy, vesselID) {
+  try {
+      const request = pool.request();
+
+      const now = new Date();
+
+      request.input('recordID', recordId);
+      request.input('verifiedBy', verifiedBy);
+      request.input('verifiedAt', now);
+      request.input('status', 1);
+
+
+      const result = await request.query(`
+          UPDATE tbl_ODSOperation
+          SET verifiedBy=@verifiedBy, verifiedAt=@verifiedAt, verificationStatus=@status
+          WHERE recordID=@recordID;
+      `);
+
+
+      const auditRequest = pool.request();
+
+      auditRequest.input('recordID', recordId);
+      auditRequest.input('verifiedBy', verifiedBy);
+      auditRequest.input('verifiedAt', now);
+      auditRequest.input('vesselID', vesselID);
+      auditRequest.input('Operation', 'CE Verified');
+      auditRequest.input('recordBook', 'ODS Record Book');
+      auditRequest.input('remarks', 'Garbage Record Verified');
+      auditRequest.input('status', 'Verified');
+
+
+      await auditRequest.query(`
+          INSERT INTO tbl_audit_log (CreatedAt, CreatedBy, VesselID, RecordBook, RecordID, Operation, Remarks, Status) 
+          VALUES (@verifiedAt, @verifiedBy, @vesselID, @recordBook, @recordID, @Operation, @remarks, @status);
+      `);
+
+      return !!(result.rowsAffected && result.rowsAffected[0] > 0);
+  } catch (err) {
+      console.error('Service error:', err);
+      throw new Error(`Database error: ${err.message}`);
+  }
+}
+
+async function setRecordRejected(recordId,verifiedBy, vesselID,remarks) {
+  try {
+      const request = pool.request();
+
+      const now = new Date();
+
+      request.input('recordID', recordId);
+      request.input('verifiedBy', verifiedBy);
+      request.input('verifiedAt', now);
+      request.input('status', 2);
+      request.input('remarks', remarks);
+
+      const result = await request.query(`
+          UPDATE tbl_ODSOperation
+          SET verifiedBy=@verifiedBy, verifiedAt=@verifiedAt, verificationStatus=@status
+          WHERE recordID=@recordID;
+      `);
+
+      const auditRequest = await pool.request();
+
+      auditRequest.input('recordID', recordId);
+      auditRequest.input('verifiedBy', verifiedBy);
+      auditRequest.input('verifiedAt', now);
+      auditRequest.input('vesselID', vesselID);
+      auditRequest.input('Operation', 'CE Verified');
+      auditRequest.input('recordBook', 'ODS Record Book');
+      auditRequest.input('remarks', remarks);
+      auditRequest.input('status', 'Rejected');
+
+
+      await auditRequest.query(`
+          INSERT INTO tbl_audit_log (CreatedAt, CreatedBy, VesselID, RecordBook, RecordID, Operation, Remarks, Status) 
+          VALUES (@verifiedAt, @verifiedBy, @vesselID, @recordBook, @recordID, @Operation, @remarks, @status);
+      `);
+
+      return !!(result.rowsAffected && result.rowsAffected[0] > 0);
+
+  } catch (err) {
+
+      console.error('Service error:', err);
+      throw new Error(`Database error: ${err.message}`);
+
+  }
+}
+
+async function getVerifiedRecordsForUser(userId,vesselID) {
+  try{
+
+      let request=await pool.request();
+
+      request.input('ID',userId);
+      request.input('vesselID',vesselID);
+
+      let query=`select * from tbl_ODSOperation where verificationStatus=1 and verifiedBy=@ID and vesselID=@vesselID;`;
+
+      const result = await request.query(query);
+
+      if(result.recordset.length>0){
+          return result.recordset;
+      }
+
+      return [];
+
+  }catch(err){
+      console.error('Service error:', err);
+      throw new Error(`Database error: ${err.message}`);
+  }
+}
+
+
+export  {getVerifiedRecordsForUser,  insertODSRecord, insertODSEquipment,  getODSRecordsByOperation,getAllUnverifiedRecords,setRecordRejected,setRecordVerified };

@@ -28,6 +28,10 @@ async function getAllRecords(vesselID){
                 s.createdAt,
                 s.approvalStatus,
                 s.approvedBy,
+                s.verifiedBy,
+                s.verificationStatus,
+                s.verifiedAt,
+                s.verificationRemarks,
                 u.fullname as createdBy
             from tbl_fuel_oil_received_record s
                      left join tbl_user u on u.user_id=s.createdBy
@@ -35,7 +39,7 @@ async function getAllRecords(vesselID){
         `;
 
         const result = await request.query(query);
-
+        console.log(result.recordset);
         if(result.recordset.length>0){
             return result.recordset;
         }
@@ -46,6 +50,31 @@ async function getAllRecords(vesselID){
 
     }catch(err){
         console.error('Error while getting pool in equipment category controller', err);
+        throw new Error(`Database error: ${err.message}`);
+    }
+}
+
+
+async function getVerifiedRecordsForUser(userId,vesselID) {
+    try{
+
+        let request=await pool.request();
+
+        request.input('ID',userId);
+        request.input('vesselID',vesselID);
+
+        let query=`select * from tbl_fuel_oil_received_record where verificationStatus=1 and verifiedBy=@ID and vesselID=@vesselID;`;
+
+        const result = await request.query(query);
+
+        if(result.recordset.length>0){
+            return result.recordset;
+        }
+
+        return [];
+
+    }catch(err){
+        console.error('Service error:', err);
         throw new Error(`Database error: ${err.message}`);
     }
 }
@@ -65,7 +94,7 @@ async function createRecord(data,vesselID){
 
         const query=`
                         
-                        insert into tbl_fuel_oil_received_record(bunkerDeliveryNoteReferenceNumber, date, grade, sulphur, tankNumber, quantity, createdBy, vesselID,approvalStatus) 
+                        insert into tbl_fuel_oil_received_record(bunkerDeliveryNoteReferenceNumber, date, grade, sulphur, tankNumber, quantity, createdBy, vesselID,approvalStatus,verificationStatus) 
                         values(
                                @bunkerDeliveryNoteReferenceNumber,
                                @date,
@@ -75,6 +104,7 @@ async function createRecord(data,vesselID){
                                @quantity,
                                @createdBy,
                                @vesselID,
+                               0,
                                0
                               );
         `;
@@ -210,4 +240,4 @@ async function setRecordRejected(recordId,verifiedBy, vesselID,remarks) {
 }
 
 
-export default {getAllRecords,createRecord,getAllUnverifiedRecords,setRecordVerified,setRecordRejected}
+export default {getAllRecords,createRecord,getVerifiedRecordsForUser,getAllUnverifiedRecords,setRecordVerified,setRecordRejected};

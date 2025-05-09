@@ -46,7 +46,7 @@ async function createRecord(req, res) {
 
         else {
             return res.status(400).json({
-                message: "Invalid operationType. Must be 1 (cargo) or 2 (Additional Remarks)"
+                message: "Invalid operationType. Must be 1 (Ballast Water) or 2 (Additional Remarks)"
             });
         }
     } catch (err) {
@@ -112,7 +112,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "cargo Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 2
                 });
@@ -146,7 +146,7 @@ async function createRecord(req, res) {
             const result = await crbService.createRecord3(data, vesselID);
             if (result.success) {
                 res.status(201).json({
-                    message: "cargo Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 3
                 });
@@ -169,11 +169,11 @@ async function createRecord(req, res) {
             if (!data.createdBy) missingFields.push("createdBy");
             // Validate required fields
             if (!data.tankDetails) missingFields.push("tankDetails");
-            if (!data.numCleaningMachines) missingFields.push("numCleaningMachines");
-            if (!data.washDuration) missingFields.push("washDuration");
+            if (data.numCleaningMachines === undefined) missingFields.push("numCleaningMachines");
+            if (data.washDuration === undefined) missingFields.push("washDuration");
             if (!data.washType) missingFields.push("washType");
             if (!data.unloadingPortFacility) missingFields.push("unloadingPortFacility");
-            if (!data.tankWashingsTransferred) missingFields.push("tankWashingsTransferred");
+            if (data.tankWashingsTransferred === undefined) missingFields.push("tankWashingsTransferred");
             if (!data.transferDateTime) missingFields.push("transferDateTime");
             if (missingFields.length > 0) {
                 return res.status(400).json({
@@ -186,7 +186,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "cargo Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 4
                 });
@@ -211,11 +211,11 @@ async function createRecord(req, res) {
             if (!data.cleaningTime) missingFields.push("cleaningTime");
             if (!data.tankDetails) missingFields.push("tankDetails");
             if (!data.washingProcedure) missingFields.push("washingProcedure");
-            if (!data.cleaningAgentQuantity) missingFields.push("cleaningAgentQuantity");
-            if (!data.numFansUsed) missingFields.push("numFansUsed");
-            if (!data.ventilationDuration) missingFields.push("ventilationDuration");
-            if (!data.intoSea) missingFields.push("intoSea");
-            if (!data.tankWashingsTransferred) missingFields.push("tankWashingsTransferred");
+            if (data.cleaningAgentQuantity === undefined) missingFields.push("cleaningAgentQuantity");
+            if (data.numFansUsed === undefined) missingFields.push("numFansUsed");
+            if (data.ventilationDuration === undefined) missingFields.push("ventilationDuration");
+            if (data.intoSea === undefined) missingFields.push("intoSea");
+            if (data.tankWashingsTransferred === undefined) missingFields.push("tankWashingsTransferred");
             if (!data.transferDateTime) missingFields.push("transferDateTime");
 
 
@@ -230,7 +230,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "cargo Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 5
                 });
@@ -256,10 +256,11 @@ async function createRecord(req, res) {
             if (!data.tankDetails) missingFields.push("tankDetails");
             if (!data.substances) missingFields.push("substances");
             if (!data.categories) missingFields.push("categories");
-            if (!data.tanksEmptied) missingFields.push("tanksEmptied");
-            if (!data.prewashDone) missingFields.push("prewashDone");
-            if (!data.tankWashingsDischarged) missingFields.push("tankWashingsDischarged");
-            if (!data.exemptionGranted) missingFields.push("exemptionGranted");
+            if (data.tanksEmptied === undefined) missingFields.push("tanksEmptied");
+            if (data.prewashDone === undefined) missingFields.push("prewashDone");
+            if (data.tankWashingsDischarged === undefined) missingFields.push("tankWashingsDischarged");
+            if (data.exemptionGranted === undefined) missingFields.push("exemptionGranted");
+            if (data.exemptionGranted && !data.exemptionReason) missingFields.push("exemptionReason");
 
             if (missingFields.length > 0) {
                 return res.status(400).json({
@@ -272,7 +273,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "cargo Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 6
                 });
@@ -310,7 +311,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "cargo Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 7
                 });
@@ -332,8 +333,19 @@ async function createRecord(req, res) {
             if (!data.createdBy) missingFields.push("createdBy");
             // Validate required fields
             if (!data.tankDetails) missingFields.push("tankDetails");
-            if (!data.wereWashingsDischarged) missingFields.push("wereWashingsDischarged");
-             
+            if (data.wereWashingsDischarged === undefined) missingFields.push("wereWashingsDischarged");
+            if (data.wereWashingsDischarged && data.dischargeRate === undefined) {
+                missingFields.push("dischargeRate");
+            }
+            if (data.wereWashingsDischarged && data.quantityDischarged === undefined) {
+                missingFields.push("quantityDischarged");
+            }
+            if (data.wereWashingsDischarged && !data.startTime) {
+                missingFields.push("startTime");
+            }
+            if (data.wereWashingsDischarged && !data.stopTime) {
+                missingFields.push("stopTime");
+            }
             if (missingFields.length > 0) {
                 return res.status(400).json({
                     message: `Missing required fields: ${missingFields.join(", ")}`
@@ -345,7 +357,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "cargo Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 8
                 });
@@ -370,7 +382,7 @@ async function createRecord(req, res) {
             if (!data.categoryOfCargo) missingFields.push("categoryOfCargo");
             if (!data.tankFrom) missingFields.push("tankFrom");
             if (!data.tankTo) missingFields.push("tankTo");
-            if (!data.wasTankEmptied) missingFields.push("wasTankEmptied");
+            if (data.wasTankEmptied === undefined) missingFields.push("wasTankEmptied");
 
             if (missingFields.length > 0) {
                 return res.status(400).json({
@@ -383,7 +395,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "cargo Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 9
                 });
@@ -407,8 +419,8 @@ async function createRecord(req, res) {
             // Validate required fields
             if (!data.placeOfUnloading) missingFields.push("placeOfUnloading");
             if (!data.tanksUnloaded) missingFields.push("tanksUnloaded");
-            if (!data.wasTankEmptied) missingFields.push("wasTankEmptied");
-            if (!data.prewashRequired) missingFields.push("prewashRequired");
+            if (data.wasTankEmptied === undefined) missingFields.push("wasTankEmptied");
+            if (data.prewashRequired === undefined) missingFields.push("prewashRequired");
 
             if (missingFields.length > 0) {
                 return res.status(400).json({
@@ -421,7 +433,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "cargo Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 10
                 });
@@ -436,11 +448,11 @@ async function createRecord(req, res) {
     async function createRecord11(req, res) {
         try {
             const data = req.body.operationData;
-            data.createdBy = parseInt(req.user.user_id); // Assign logged-in user ID
             let vesselID = parseInt(req.user.vessel_id);
             data.createdBy = parseInt(req.user.user_id);
             let missingFields = [];
 
+            if (!data.createdBy) missingFields.push("createdBy");
             // Validate required fields
             if (!data.placeOfLoading) missingFields.push("placeOfLoading");
             if (!data.tankIdentity) missingFields.push("tankIdentity");
@@ -458,7 +470,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "cargo Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 10
                 });
@@ -481,5 +493,62 @@ async function fetchRecords(req, res) {
         res.status(500).json({ message: `Internal server error: ${err.message}` });
     }
 }
+async function updateRecordVerificationStatus(req,res){
+    try{
 
-export default { createRecord, fetchRecords };
+        let data=req.body;
+
+
+        if(!data){
+            return res.status(400).send({message:"no inputs found"});
+        }
+
+        let recordId=data.recordId;
+        let verifiedBy=req.user.user_id;
+        let vesselId=req.user.vessel_id;
+        let operation=data.operation;
+        let remarks=data.remarks || null;
+
+
+        if(!recordId){
+            return res.status(400).send({message:"Record ID is required"});
+        }
+
+        if(!vesselId){
+            return res.status(400).send({message:"Vessel ID is required"});
+        }
+
+        if(!verifiedBy){
+            return res.status(400).send({message:"id of the verifier is missing"});
+        }
+
+        if(operation===null || operation===undefined || operation === ''){
+            return res.status(400).json({message:"Operation type is is required"});
+        }
+
+
+        if(Number(operation)===1){
+            let verified=await crbService.setRecordVerified(recordId,verifiedBy,vesselId);
+
+            if(!verified){
+                return res.status(500).send({message:"can't verifiy the record"});
+            }
+
+            return res.status(200).json({message:"Record verified"});
+        }else if(Number(operation)===2){
+            let rejected=await crbService.setRecordRejected(recordId,verifiedBy,vesselId,remarks);
+
+            if(!rejected){
+                return res.status(500).send({message:"verfication update failed",operation:"rejection"});
+            }
+
+        }
+
+        return res.status(200).json({message:"verification status updated"});
+
+    }catch(err){
+        console.log(err);
+        return res.status(500).send({message:err.message||"internal server error"});
+    }
+}
+export default { createRecord, fetchRecords, updateRecordVerificationStatus};

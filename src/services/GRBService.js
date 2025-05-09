@@ -23,7 +23,7 @@ async function getRecords(vesselID) {
                     r.position, r.methodOfDisposal, r.plastics, r.foodWaste, 
                     r.domesticWaste, r.cookingOil, r.incineratorAsh, 
                     r.operationalWaste, r.animalCarcasses, r.fishingGear, 
-                    r.eWaste, r.remarks, r.approvalStatus, 
+                    r.eWaste, r.remarks, r.approvalStatus,r.approvedBy,r.verificationStatus,r.verificationRemarks,r.verifiedBy,r.verifiedAt, 
                     u.fullName AS createdBy
                 FROM  tbl_garbage_record_book r
                 JOIN tbl_user u ON r.createdBy = u.user_id
@@ -64,17 +64,19 @@ async function createRecord(data,vesselID){
             .input('eWaste', data.eWaste ?? 0)
             .input('remarks', data.remarks)
             .input('createdBy', data.createdBy)
-            .input('approvalStatus', 0  );
+            .input('approvalStatus', 0  )
+            .input('verifiedAt',null)
+            .input('verificationStatus',0);
 
         const result = await request.query(`
 
-
+        
         INSERT INTO tbl_garbage_record_book (vesselID, occasion, area, date, time, position, methodOfDisposal,
             plastics, foodWaste, domesticWaste, cookingOil, incineratorAsh, operationalWaste, 
-            animalCarcasses, fishingGear, eWaste, remarks, createdBy, approvalStatus)
+            animalCarcasses, fishingGear, eWaste, remarks, createdBy, approvalStatus,verificationStatus)
         VALUES (@vesselID, @occasion, @area, @date, @time, @position, @methodOfDisposal, 
             @plastics, @foodWaste, @domesticWaste, @cookingOil, @incineratorAsh, @operationalWaste, 
-            @animalCarcasses, @fishingGear, @eWaste, @remarks, @createdBy, @approvalStatus);
+            @animalCarcasses, @fishingGear, @eWaste, @remarks, @createdBy, @approvalStatus,@verificationStatus);
 
 
     `);
@@ -202,4 +204,28 @@ async function setRecordRejected(recordId,verifiedBy, vesselID,remarks) {
     }
 }
 
-export default {createRecord,getRecords,getAllUnverifiedRecords,setRecordRejected,setRecordVerified};
+async function getVerifiedRecordsForUser(userId,vesselID) {
+    try{
+
+        let request=await pool.request();
+
+        request.input('ID',userId);
+        request.input('vesselID',vesselID);
+
+        let query=`select * from tbl_garbage_record_book where verificationStatus=1 and verifiedBy=@ID and vesselID=@vesselID;`;
+
+        const result = await request.query(query);
+
+        if(result.recordset.length>0){
+            return result.recordset;
+        }
+
+        return [];
+
+    }catch(err){
+        console.error('Service error:', err);
+        throw new Error(`Database error: ${err.message}`);
+    }
+}
+
+export default {getVerifiedRecordsForUser,createRecord,getRecords,getAllUnverifiedRecords,setRecordRejected,setRecordVerified};

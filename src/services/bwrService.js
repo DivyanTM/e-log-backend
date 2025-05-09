@@ -12,7 +12,7 @@ async function createRecord1(data, vesselID) {
             .input("position", data.position)
             .input("estimatedDischargedVolume", parseFloat(data.estimatedDischargedVolume) || 0)
             .input("circumstancesRemarks", data.circumstancesRemarks)
-            .input("conformBWMPlan", data.conformBWMPlan ? 1 : 0)
+            .input("conformBWMPlan", data.conformBWMPlan)
             .query(`
                 INSERT INTO tbl_bwr_ballastWaterAccidentalDischarge_formEntries 
                     (recordDate, recordTime, position, estimatedDischargedVolume, 
@@ -32,11 +32,15 @@ async function createRecord1(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO tbl_bwr_ballastWater_main 
-                    (createdAt, createdBy, vesselID, accidentalDischarge_ID, approvedStatus)
+                    (createdAt, createdBy, vesselID, approvedBy, accidentalDischarge_ID, approvedStatus)
                 VALUES 
-                    (@createdAt, @createdBy, @vesselID, @accidentalDischarge_ID, @approvedStatus)
+                    (@createdAt, @createdBy, @vesselID, @approvedBy, @accidentalDischarge_ID, @approvedStatus)
             `);
 
         await transaction.commit();
@@ -75,11 +79,15 @@ async function createRecord2(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO tbl_bwr_ballastWater_main 
-                    (ballastWaterDischargeFacility_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (ballastWaterDischargeFacility_ID, createdAt, createdBy, vesselID, approvedBy)
                 VALUES 
-                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
+                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedBy)
             `);
 
         return { success: true, operationID };
@@ -115,11 +123,15 @@ async function createRecord3(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO tbl_bwr_ballastWater_main 
-                    (ballastWaterDischargeSea_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (ballastWaterDischargeSea_ID, createdAt, createdBy, vesselID, approvedBy)
                 VALUES 
-                    (@ballastWaterDischargeSea_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
+                    (@ballastWaterDischargeSea_ID, @createdAt, @createdBy, @vesselID, @approvedBy)
             `);
 
         return { success: true, operationID };
@@ -154,11 +166,15 @@ async function createRecord4(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO tbl_bwr_ballastWater_main 
-                    (ballastWaterTreatment_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (ballastWaterTreatment_ID, createdAt, createdBy, vesselID, approvedBy, approvedStatus,verificationStatus)
                 VALUES 
-                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
+                    (@ballastWaterDischargeFacility_ID,@createdAt, @createdBy, @vesselID, @approvedBy, @approvedStatus,0)
             `);
 
         return { success: true, operationID };
@@ -174,8 +190,8 @@ async function createRecord5(data, vesselID) {
             .input("recordDate", data.recordDate)
             .input("recordTime", data.recordTime)
             .input("position", data.position)
-            .input("waterDepth", data.waterDepth)  // Ensuring decimal(5,2)
-            .input("estimatedUptakeVolume", data.estimatedUptakeVolume) // Ensuring decimal(10,2)
+            .input("waterDepth", parseFloat(data.waterDepth) || 0)  // Ensuring decimal(5,2)
+            .input("estimatedUptakeVolume", parseFloat(data.estimatedUptakeVolume) || 0) // Ensuring decimal(10,2)
             .query(`
             INSERT INTO tbl_bwr_ballastWaterUptake_formEntries 
                 (recordDate, recordTime, position, waterDepth, estimatedUptakeVolume)
@@ -190,13 +206,19 @@ async function createRecord5(data, vesselID) {
             .input("ballastWaterDischargeFacility_ID", operationID)
             .input("createdAt", new Date())
             .input("createdBy", data.createdBy)
+
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
+
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
             .query(`
                 INSERT INTO tbl_bwr_ballastWater_main 
-                    (ballastWaterUptake_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (ballastWaterDischargeFacility_ID, createdAt, createdBy, vesselID, approvedBy, approvedStatus,verificationStatus)
                 VALUES 
-                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
+                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedBy, @approvedStatus,0)
             `);
 
         return { success: true, operationID };
@@ -211,8 +233,8 @@ async function fetchRecords(vesselID) {
         const result = await pool.request()
             .input('vesselID', vesselID)
             .query(`
-            SELECT 
-                    r.recordID, r.createdAt, r.approvedBy, r.approvedStatus, 
+                 DELETE FROM tbl_bwr_ballastWater_main;0              SELECT 
+                    r.recordID, r.createdAt, r.approvedBy, r.approvedStatus, r.verifiedBy, r.verifiedAt, r.verificationStatus, r.verificationRemarks, 
                     r.createdBy, r.vesselID, r.ballastWaterUptake_ID, 
                     r.ballastWaterTreatment_ID, r.ballastWaterDischargeSea_ID, 
                     r.ballastWaterDischargeFacility_ID, r.accidentalDischarge_ID, 
@@ -220,15 +242,206 @@ async function fetchRecords(vesselID) {
                 FROM tbl_bwr_ballastWater_main r
                 LEFT JOIN tbl_user u ON u.user_id = r.createdBy
                 WHERE vesselID = @vesselID
-
             `);
+        const mainRecords = result.recordset;
+        const completeRecords = [];
+
+        for (const record of mainRecords) {
+            const completeRecord = { ...record };
+
+            // Check each ID field and query the corresponding table if not null
+            if (record.ballastWaterUptake_ID) {
+                const uptakeResult = await pool.request()
+                    .input('id', record.ballastWaterUptake_ID)
+                    .query('SELECT * FROM tbl_bwr_ballastWaterUptake_formEntries WHERE operationID = @id');
+                completeRecord.uptakeData = uptakeResult.recordset[0] || null;
+            }
+
+            if (record.ballastWaterTreatment_ID) {
+                const treatmentResult = await pool.request()
+                    .input('id', record.ballastWaterTreatment_ID)
+                    .query('SELECT * FROM tbl_bwr_ballastWaterTreatment_formEntries WHERE operationID = @id');
+                completeRecord.treatmentData = treatmentResult.recordset[0] || null;
+            }
+
+            if (record.ballastWaterDischargeSea_ID) {
+                const dischargeSeaResult = await pool.request()
+                    .input('id', record.ballastWaterDischargeSea_ID)
+                    .query('SELECT * FROM tbl_bwr_ballastWaterDischargeSea_formEntries WHERE operationID = @id');
+                completeRecord.dischargeSeaData = dischargeSeaResult.recordset[0] || null;
+            }
+
+            if (record.ballastWaterDischargeFacility_ID) {
+                const dischargeFacilityResult = await pool.request()
+                    .input('id', record.ballastWaterDischargeFacility_ID)
+                    .query('SELECT * FROM tbl_bwr_ballastWaterDischargeFacility_formEntries WHERE operationID = @id');
+                completeRecord.dischargeFacilityData = dischargeFacilityResult.recordset[0] || null;
+            }
+
+            if (record.accidentalDischarge_ID) {
+                const accidentalResult = await pool.request()
+                    .input('id', record.accidentalDischarge_ID)
+                    .query('SELECT * FROM tbl_bwr_ballastWaterAccidentalDischarge_formEntries WHERE operationID = @id');
+                completeRecord.accidentalData = accidentalResult.recordset[0] || null;
+            }
+
+            completeRecords.push(completeRecord);
+        }
+        console.log("Complete result:", completeRecords);
+        function cleanResultRecords(records) {
+            return records.map(record => {
+                // Create a new object without the ID fields
+                const cleanRecord = {
+                    recordID: record.recordID,
+                    createdAt: record.createdAt,
+                    approvedBy: record.approvedBy,
+                    approvedStatus: record.approvedStatus,
+                    createdBy: record.createdBy,
+                    vesselID: record.vesselID,
+                    createdByName: record.createdByName,
+                    verifiedBy: record.verifiedBy,
+                    verifiedAt: record.verifiedAt,
+                    verificationStatus: record.verificationStatus,
+                    verificationRemarks: record.verificationRemarks,
+                    // Include any data objects that exist
+                    ...(record.uptakeData && { uptakeData: record.uptakeData }),
+                    ...(record.treatmentData && { treatmentData: record.treatmentData }),
+                    ...(record.dischargeSeaData && { dischargeSeaData: record.dischargeSeaData }),
+                    ...(record.dischargeFacilityData && { dischargeFacilityData: record.dischargeFacilityData }),
+                    ...(record.accidentalData && { accidentalData: record.accidentalData })
+                };
+
+                return cleanRecord;
+            });
+        }
+
+        // Usage:
+        const cleanedRecords = cleanResultRecords(completeRecords);
+
 
         console.log("Query result:", result.recordset.length, "records found.");
-        return result.recordset;
+        return cleanedRecords;
     } catch (err) {
         console.error("Database Fetch Error:", err.message);
         throw err;
     }
 }
 
-export default { createRecord1, createRecord2, createRecord3, createRecord4, createRecord5, fetchRecords };
+
+async function getAllUnverifiedRecords(vesselID) {
+    try {
+        const pool = await getPool();
+        const request = pool.request();
+        request.input('vesselID', vesselID);
+
+        let query = `
+       
+            select 'Ballast Water Record Book' as recordName,t. *,u.fullname from tbl_bwr_ballastWater_main t
+                                                                left join tbl_user u on u.user_id=t.createdBy
+            where t.verificationStatus=0 and t.vesselID=@vesselID;
+        
+        `;
+
+        const result = await request.query(query);
+
+        if (result.recordset.length > 0) {
+            return result.recordset;
+        }
+
+        return [];
+
+    } catch (err) {
+        console.log("BWR service : ", err);
+        throw new Error(`Database error: ${err.message}`);
+    }
+}
+
+async function setRecordVerified(recordId, verifiedBy, vesselID) {
+    try {
+        const pool = await getPool();
+        const request = pool.request();
+        const now = new Date();
+
+        request.input('recordID', recordId);
+        request.input('verifiedBy', verifiedBy);
+        request.input('verifiedAt', now);
+        request.input('status', 1);
+
+
+        const result = await request.query(`
+            UPDATE tbl_bwr_ballastWater_main
+            SET verifiedBy=@verifiedBy, verifiedAt=@verifiedAt, verificationStatus=@status
+            WHERE recordID=@recordID;
+        `);
+
+
+        const auditRequest = pool.request();
+
+        auditRequest.input('recordID', recordId);
+        auditRequest.input('verifiedBy', verifiedBy);
+        auditRequest.input('verifiedAt', now);
+        auditRequest.input('vesselID', vesselID);
+        auditRequest.input('Operation', 'CE Verified');
+        auditRequest.input('recordBook', 'Ballast Water Record Book');
+        auditRequest.input('remarks', 'Ballast Water Record Verified');
+        auditRequest.input('status', 'Verified');
+
+
+        await auditRequest.query(`
+            INSERT INTO tbl_audit_log (CreatedAt, CreatedBy, VesselID, RecordBook, RecordID, Operation, Remarks, Status) 
+            VALUES (@verifiedAt, @verifiedBy, @vesselID, @recordBook, @recordID, @Operation, @remarks, @status);
+        `);
+
+        return !!(result.rowsAffected && result.rowsAffected[0] > 0);
+    } catch (err) {
+        console.error('Service error:', err);
+        throw new Error(`Database error: ${err.message}`);
+    }
+}
+
+async function setRecordRejected(recordId, verifiedBy, vesselID, remarks) {
+    try {
+        const pool = await getPool();
+        const request = pool.request();
+        const now = new Date();
+
+        request.input('recordID', recordId);
+        request.input('verifiedBy', verifiedBy);
+        request.input('verifiedAt', now);
+        request.input('status', 2);
+        request.input('remarks', remarks);
+
+        const result = await request.query(`
+            UPDATE tbl_bwr_ballastWater_main
+            SET verifiedBy=@verifiedBy, verifiedAt=@verifiedAt, verificationStatus=@status,verificationRemarks=@remarks
+            WHERE recordID=@recordID;
+        `);
+
+        const auditRequest = await pool.request();
+
+        auditRequest.input('recordID', recordId);
+        auditRequest.input('verifiedBy', verifiedBy);
+        auditRequest.input('verifiedAt', now);
+        auditRequest.input('vesselID', vesselID);
+        auditRequest.input('Operation', 'CE Verified');
+        auditRequest.input('recordBook', 'Ballast Water Record Book');
+        auditRequest.input('remarks', remarks);
+        auditRequest.input('status', 'Rejected');
+
+
+        await auditRequest.query(`
+            INSERT INTO tbl_audit_log (CreatedAt, CreatedBy, VesselID, RecordBook, RecordID, Operation, Remarks, Status) 
+            VALUES (@verifiedAt, @verifiedBy, @vesselID, @recordBook, @recordID, @Operation, @remarks, @status);
+        `);
+
+        return !!(result.rowsAffected && result.rowsAffected[0] > 0);
+
+    } catch (err) {
+
+        console.error('Service error:', err);
+        throw new Error(`Database error: ${err.message}`);
+
+    }
+}
+
+export default { createRecord1, createRecord2, createRecord3, createRecord4, createRecord5, fetchRecords, getAllUnverifiedRecords, setRecordRejected, setRecordVerified };

@@ -13,6 +13,7 @@ async function createRecord1(data, vesselID) {
             .input("category", data.category)
             .input("circumstances", data.circumstances)
             .input("remarks", data.remarks)
+
             .query(`
         INSERT INTO tbl_crb_accidentalDischarge_formEntries 
             (occurrenceTime, quantity, substance, category, circumstances, remarks)
@@ -29,6 +30,9 @@ async function createRecord1(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
                     (createdAt, createdBy, vesselID, accidentalDischarge_ID, approvedStatus)
@@ -67,11 +71,15 @@ async function createRecord2(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (additionalProcedures_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (additionalProcedures_ID, createdAt, createdBy, vesselID,  approvedStatus)
                 VALUES 
-                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
+                    (@ballastWaterDischargeFacility_ID,@createdAt, @createdBy, @vesselID,  @approvedStatus)
             `);
 
         return { success: true, operationID };
@@ -102,11 +110,15 @@ async function createRecord3(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (ballastingCargoTanks_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (ballastingCargoTanks_ID, createdAt, createdBy, vesselID,  approvedStatus)
                 VALUES 
-                    (@ballastWaterDischargeSea_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
+                    (@ballastWaterDischargeSea_ID, @createdAt, @createdBy, @vesselID,  @approvedStatus)
             `);
 
         return { success: true, operationID };
@@ -118,6 +130,7 @@ async function createRecord3(data, vesselID) {
 async function createRecord4(data, vesselID) {
     const pool = await getPool();
     try {
+        if (missingFields.length === 0) {
             const formResult = await pool.request()
                 .input("tankDetails", data.tankDetails)
                 .input("numCleaningMachines", parseInt(data.numCleaningMachines) || 0)
@@ -145,15 +158,19 @@ async function createRecord4(data, vesselID) {
                 .input("createdBy", data.createdBy)
                 .input("vesselID", vesselID)
                 .input("approvedStatus", 0)
+                .input("verificationStatus", 0)
+                .input("verifiedBy", data.createdBy)
+                .input("approvedBy", data.createdBy)
+                .input("verifiedAt", new Date())
                 .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (cargoPrewash_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (cargoPrewash_ID, createdAt, createdBy, vesselID,  approvedStatus)
                 VALUES 
-                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
+                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID,  @approvedStatus)
             `);
 
             return { success: true, operationID };
-        
+        }
     } catch (err) {
         console.error("Ballast Water Discharge Facility Service Error:", err.message);
         throw err;
@@ -197,6 +214,10 @@ async function createRecord5(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
                     (cleaningCargoTanks_ID, createdAt, createdBy, vesselID, approvedStatus)
@@ -251,11 +272,15 @@ async function createRecord6(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
                     (controlSurveyors_ID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
-                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
+                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID,  @approvedStatus)
             `);
 
         return { success: true, operationID };
@@ -294,12 +319,15 @@ async function createRecord7(data, vesselID) {
             .input("createdAt", new Date())
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (dischargeBallastWater_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (dischargeBallastWater_ID, createdAt, createdBy, vesselID,  approvedStatus)
                 VALUES 
-                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
+                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID,  @approvedStatus)
             `);
 
         return { success: true, operationID };
@@ -314,22 +342,20 @@ async function createRecord8(data, vesselID) {
         const formResult = await pool.request()
             .input("tankDetails", data.tankDetails)
             .input("wereWashingsDischarged", Boolean(data.wereWashingsDischarged))
-            .input("dischargeRate", data.dischargeRate)
-            .input("quantityDischarged", data.quantityDischarged)
-            .input("startTime", data.startTime )
-            .input("stopTime", data.stopTime)
-            .input("shipSpeed", data.shipSpeed)
-            .input("wereSlopDischarged", data.wereSlopDischarged)
-            .input("slopRate", data.slopRate)
+            .input("dischargeRate", data.wereWashingsDischarged ? parseFloat(data.dischargeRate) : null)
+            .input("quantityDischarged", data.wereWashingsDischarged ? parseFloat(data.quantityDischarged) : null)
+            .input("startTime", data.wereWashingsDischarged ? data.startTime : null)
+            .input("stopTime", data.wereWashingsDischarged ? data.stopTime : null)
+            .input("shipSpeed", data.shipSpeed !== undefined ? parseFloat(data.shipSpeed) : null)
             .query(`
             INSERT INTO tbl_crb_dischargeSea_formEntries (
                 tankDetails, wereWashingsDischarged, dischargeRate,
-                quantityDischarged, startTime, stopTime, shipSpeed, wereSlopDischarged,slopRate
+                quantityDischarged, startTime, stopTime, shipSpeed
             )
             OUTPUT inserted.operationID
             VALUES (
                 @tankDetails, @wereWashingsDischarged, @dischargeRate,
-                @quantityDischarged, @startTime, @stopTime, @shipSpeed,@wereSlopDischarged,@slopRate
+                @quantityDischarged, @startTime, @stopTime, @shipSpeed
             )
         `);
         const operationID = formResult.recordset?.[0]?.operationID;
@@ -340,10 +366,14 @@ async function createRecord8(data, vesselID) {
             .input("createdAt", new Date())
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (dischargeSea_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (dischargeSea_ID, createdAt, createdBy, vesselID,  approvedStatus)
                 VALUES 
                     (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
             `);
@@ -382,11 +412,15 @@ async function createRecord9(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
                     (internalTransfer_ID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
-                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
+                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID,  @approvedStatus)
             `);
 
         return { success: true, operationID };
@@ -426,11 +460,15 @@ async function createRecord10(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
                     (unloadingCargo_ID, createdAt, createdBy, vesselID, approvedStatus)
                 VALUES 
-                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
+                    (@ballastWaterDischargeFacility_ID, @createdAt, @createdBy, @vesselID,  @approvedStatus)
             `);
 
         return { success: true, operationID };
@@ -464,11 +502,16 @@ async function createRecord11(data, vesselID) {
             .input("createdBy", data.createdBy)
             .input("vesselID", vesselID)
             .input("approvedStatus", 0)
+            .input("verificationStatus", 0)
+            .input("verifiedBy", data.createdBy)
+            .input("approvedBy", data.createdBy)
+            .input("verifiedAt", new Date())
+
             .query(`
                 INSERT INTO  tbl_crb_cargoRecord 
-                    (loadingCargo_ID, createdAt, createdBy, vesselID, approvedStatus)
+                    (loadingCargo_ID, createdAt, createdBy, vesselID,  approvedStatus)
                 VALUES 
-                    (@loadingCargo_ID, @createdAt, @createdBy, @vesselID, @approvedStatus)
+                    (@loadingCargo_ID, @createdAt, @createdBy, @vesselID,  @approvedStatus)
             `);
 
         return { success: true, operationID };
@@ -483,9 +526,10 @@ async function fetchRecords(vesselID) {
         const result = await pool.request()
             .input('vesselID', vesselID)
             .query(`
+              
                 SELECT  
     r.recordID, r.createdAt, r.approvedBy, r.approvedStatus,  
-    r.createdBy, r.vesselID, r.loadingCargo_ID,  
+    r.createdBy, r.vesselID, r.loadingCargo_ID, r.verifiedBy, r.verifiedAt, r.verificationStatus, r.verificationRemarks,
     r.ballastingCargoTanks_ID, r.additionalProcedures_ID,  
     r.internalTransfer_ID, r.dischargeSea_ID,  
     r.cargoPrewash_ID, r.controlSurveyors_ID,  
@@ -497,12 +541,276 @@ LEFT JOIN tbl_user u ON u.user_id = r.createdBy
 WHERE vesselID = @vesselID
             `);
 
+        const mainRecords = result.recordset;
+        const completeRecords = [];
+
+        for (const record of mainRecords) {
+            const completeRecord = { ...record };
+
+            // Check each ID field and query the corresponding table if not null
+            if (record.loadingCargo_ID) {
+                const loadingResult = await pool.request()
+                    .input('id', record.loadingCargo_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_loadingCargo_formEntries] WHERE operationID = @id');
+                completeRecord.loadingData = loadingResult.recordset[0] || null;
+            }
+
+            if (record.ballastingCargoTanks_ID) {
+                const ballastCargoResult = await pool.request()
+                    .input('id', record.ballastingCargoTanks_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_ballastingCargoTanks_formEntries] WHERE operationID = @id');
+                completeRecord.ballastCargoData = ballastCargoResult.recordset[0] || null;
+            }
+
+            if (record.additionalProcedures_ID) {
+                const additionalResult = await pool.request()
+                    .input('id', record.additionalProcedures_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_additionalProcedures_formEntries] WHERE operationID = @id');
+                completeRecord.additionalData = additionalResult.recordset[0] || null;
+            }
+
+            if (record.internalTransfer_ID) {
+                const internalResult = await pool.request()
+                    .input('id', record.internalTransfer_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_internalTransfer_formEntries] WHERE operationID = @id');
+                completeRecord.internalData = internalResult.recordset[0] || null;
+            }
+
+            if (record.dischargeSea_ID) {
+                const dischargeSeaResult = await pool.request()
+                    .input('id', record.dischargeSea_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_dischargeSea_formEntries] WHERE operationID = @id');
+                completeRecord.dischargeSeaData = dischargeSeaResult.recordset[0] || null;
+            }
+            if (record.cargoPrewash_ID) {
+                const cargoPrewashResult = await pool.request()
+                    .input('id', record.cargoPrewash_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_cargoPrewash_formEntries] WHERE operationID = @id');
+                completeRecord.cargoPrewashData = cargoPrewashResult.recordset[0] || null;
+            }
+            if (record.controlSurveyors_ID) {
+                const controlSurveyorsResult = await pool.request()
+                    .input('id', record.controlSurveyors_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_controlSurveyors_formEntries] WHERE operationID = @id');
+                completeRecord.controlSurveyorsData = controlSurveyorsResult.recordset[0] || null;
+            }
+            if (record.accidentalDischarge_ID) {
+                const accidentalDischargeResult = await pool.request()
+                    .input('id', record.accidentalDischarge_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_accidentalDischarge_formEntries] WHERE operationID = @id');
+                completeRecord.accidentalDischargeData = accidentalDischargeResult.recordset[0] || null;
+            }
+            if (record.dischargeBallastWater_ID) {
+                const dischargeSeaResult = await pool.request()
+                    .input('id', record.dischargeBallastWater_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_dischargeBallastWater_formEntries] WHERE operationID = @id');
+                completeRecord.dischargeSeaData = dischargeSeaResult.recordset[0] || null;
+            }
+            if (record.unloadingCargo_ID) {
+                const unloadingCargoResult = await pool.request()
+                    .input('id', record.unloadingCargo_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_unloadingCargo_formEntries] WHERE operationID = @id');
+                completeRecord.unloadingCargoData = unloadingCargoResult.recordset[0] || null;
+            }
+            if (record.cleaningCargoTanks_ID) {
+                const cleaningCargoTanksResult = await pool.request()
+                    .input('id', record.cleaningCargoTanks_ID)
+                    .query('SELECT * FROM [dbo].[tbl_crb_cleaningCargoTanks_formEntries] WHERE operationID = @id');
+                completeRecord.cleaningCargoTanksData = cleaningCargoTanksResult.recordset[0] || null;
+            }
+
+            completeRecords.push(completeRecord);
+        }
+        console.log("Complete result:", completeRecords);
+        function cleanResultRecords(records) {
+            return records.map(record => {
+                // Create a new object without the ID fields
+                const cleanRecord = {
+                    recordID: record.recordID,
+                    createdAt: record.createdAt,
+                    approvedBy: record.approvedBy,
+                    approvedStatus: record.approvedStatus,
+                    createdBy: record.createdBy,
+                    vesselID: record.vesselID,
+                    createdByName: record.createdByName,
+                    verifiedBy: record.verifiedBy,
+                    verifiedAt: record.verifiedAt,
+                    verificationStatus: record.verificationStatus,
+                    verificationRemarks: record.verificationRemarks,
+                    // Include any data objects that exist
+                    ...(record.loadingData && { loadingData: record.loadingData }),
+                    ...(record.ballastCargoData && { ballastCargoData: record.ballastCargoData }),
+                    ...(record.additionalData && { additionalData: record.additionalData }),
+                    ...(record.dischargeFacilityData && { dischargeFacilityData: record.dischargeFacilityData }),
+                    ...(record.internalData && { dischargeFacilityData: record.internalData }),
+                    ...(record.cargoPrewashData && { cargoPrewashData: record.cargoPrewashData }),
+                    ...(record.controlSurveyorsData && { controlSurveyorsData: record.controlSurveyorsData }),
+                    ...(record.accidentalDischargeData && { accidentalDischargeData: record.accidentalDischargeData }),
+                    ...(record.dischargeSeaData && { dischargeSeaData: record.dischargeSeaData }),
+                    ...(record.unloadingCargoData && { unloadingCargoData: record.unloadingCargoData }),
+                    ...(record.cleaningCargoTanksData && { cleaningCargoTanksData: record.cleaningCargoTanksData })
+                };
+
+                return cleanRecord;
+            });
+        }
+
+        // Usage:
+        const cleanedRecords = cleanResultRecords(completeRecords);
+
+
         console.log("Query result:", result.recordset.length, "records found.");
-        return result.recordset;
+        return cleanedRecords;
+
     } catch (err) {
         console.error("Database Fetch Error:", err.message);
         throw err;
     }
 }
 
-export default { createRecord1, createRecord2, createRecord3, createRecord4, createRecord5, createRecord6, createRecord7, createRecord8, createRecord9, createRecord10, createRecord11, fetchRecords };
+
+async function getAllUnverifiedRecords(vesselID) {
+
+    try {
+        const pool = await getPool();
+        const request = pool.request();
+        request.input('vesselID', vesselID);
+
+        let query = `
+            select 'Cargo Record Book' as recordName,t. *,u.fullname from tbl_crb_cargoRecord t
+                                                                left join tbl_user u on u.user_id=t.createdBy
+            where t.verificationStatus=0 and t.vesselID=@vesselID;
+        
+        `;
+
+        const result = await request.query(query);
+
+        if (result.recordset.length > 0) {
+            return result.recordset;
+        }
+
+        return [];
+
+    } catch (err) {
+        console.log("CRB service : ", err);
+        throw new Error(`Database error: ${err.message}`);
+    }
+}
+
+async function setRecordVerified(recordId, verifiedBy, vesselID) {
+
+    try {
+        const pool = await getPool();
+        const request = pool.request();
+        const now = new Date();
+
+        request.input('recordID', recordId);
+        request.input('verifiedBy', verifiedBy);
+        request.input('verifiedAt', now);
+        request.input('status', 1);
+
+
+        const result = await request.query(`
+            UPDATE tbl_crb_cargoRecord
+            SET verifiedBy=@verifiedBy, verifiedAt=@verifiedAt, verificationStatus=@status
+            WHERE recordID=@recordID;
+        `);
+
+
+        const auditRequest = pool.request();
+
+        auditRequest.input('recordID', recordId);
+        auditRequest.input('verifiedBy', verifiedBy);
+        auditRequest.input('verifiedAt', now);
+        auditRequest.input('vesselID', vesselID);
+        auditRequest.input('Operation', 'CE Verified');
+        auditRequest.input('recordBook', 'Cargo Record Book');
+        auditRequest.input('remarks', 'Cargo Record Verified');
+        auditRequest.input('status', 'Verified');
+
+
+        await auditRequest.query(`
+            INSERT INTO tbl_audit_log (CreatedAt, CreatedBy, VesselID, RecordBook, RecordID, Operation, Remarks, Status) 
+            VALUES (@verifiedAt, @verifiedBy, @vesselID, @recordBook, @recordID, @Operation, @remarks, @status);
+        `);
+
+        return !!(result.rowsAffected && result.rowsAffected[0] > 0);
+    } catch (err) {
+        console.error('Service error:', err);
+        throw new Error(`Database error: ${err.message}`);
+    }
+}
+
+async function setRecordRejected(recordId, verifiedBy, vesselID, remarks) {
+
+    try {
+        const pool = await getPool();
+        const request = pool.request();
+
+        const now = new Date();
+
+        request.input('recordID', recordId);
+        request.input('verifiedBy', verifiedBy);
+        request.input('verifiedAt', now);
+        request.input('status', 2);
+        request.input('remarks', remarks);
+
+        const result = await request.query(`
+            UPDATE tbl_crb_cargoRecord
+            SET verifiedBy=@verifiedBy, verifiedAt=@verifiedAt, verificationStatus=@status,verificationRemarks=@remarks
+            WHERE recordID=@recordID;
+        `);
+
+        const auditRequest = await pool.request();
+
+        auditRequest.input('recordID', recordId);
+        auditRequest.input('verifiedBy', verifiedBy);
+        auditRequest.input('verifiedAt', now);
+        auditRequest.input('vesselID', vesselID);
+        auditRequest.input('Operation', 'CE Verified');
+        auditRequest.input('recordBook', 'Cargo Record Book');
+        auditRequest.input('remarks', remarks);
+        auditRequest.input('status', 'Rejected');
+
+
+        await auditRequest.query(`
+            INSERT INTO tbl_audit_log (CreatedAt, CreatedBy, VesselID, RecordBook, RecordID, Operation, Remarks, Status) 
+            VALUES (@verifiedAt, @verifiedBy, @vesselID, @recordBook, @recordID, @Operation, @remarks, @status);
+        `);
+
+        return !!(result.rowsAffected && result.rowsAffected[0] > 0);
+
+    } catch (err) {
+
+        console.error('Service error:', err);
+        throw new Error(`Database error: ${err.message}`);
+
+    }
+}
+
+async function getVerifiedRecordsForUser(userId,vesselID) {
+    try{
+
+        let request=await pool.request();
+
+        request.input('ID',userId);
+        request.input('vesselID',vesselID);
+
+        let query=`select * from tbl_crb_cargoRecord where verificationStatus=1 and verifiedBy=@ID and vesselID=@vesselID;`;
+
+        const result = await request.query(query);
+
+        if(result.recordset.length>0){
+            return result.recordset;
+        }
+
+        return [];
+
+    }catch(err){
+        console.error('Service error:', err);
+        throw new Error(`Database error: ${err.message}`);
+    }
+}
+
+
+export default { getVerifiedRecordsForUser,createRecord1, createRecord2, createRecord3, createRecord4, createRecord5, createRecord6, createRecord7, createRecord8, createRecord9, createRecord10, createRecord11, fetchRecords, getAllUnverifiedRecords, setRecordRejected, setRecordVerified };

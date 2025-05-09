@@ -38,7 +38,7 @@ async function createRecord(req, res) {
         }
         else {
             return res.status(400).json({
-                message: "Invalid operationType. Must be 1 (orb1) or 2 (Additional Remarks)"
+                message: "Invalid operationType. Must be 1 (Ballast Water) or 2 (Additional Remarks)"
             });
         }
     } catch (err) {
@@ -55,32 +55,30 @@ async function createRecord(req, res) {
             if (data.cleanedSinceLastOil === undefined) missingFields.push("cleanedSinceLastOil");
 
             // Conditional validation based on cleanedSinceLastOil
-                if (!data.cleaningProcessStartTime) missingFields.push("cleaningProcessStartTime");
-                if (!data.cleaningProcessEndTime) missingFields.push("cleaningProcessEndTime");
-                if (!data.cleaningMethod) missingFields.push("cleaningMethod");
-                if (!data.ballastingStartTime) missingFields.push("ballastingStartTime");
-                if (!data.ballastingEndTime) missingFields.push("ballastingEndTime");
-                if (!data.chemicalsUsed) missingFields.push("chemicalsUsed");
-                if (!data.ballastingEndLatitude) missingFields.push("ballastingEndLatitude");
-                if (!data.ballastingEndLongitude) missingFields.push("ballastingEndLongitude");
-                if (!data.quantityBallastIfNotCleaned) missingFields.push("quantityBallastIfNotCleaned");
+            if (!data.cleaningProcessStartTime) missingFields.push("cleaningProcessStartTime");
+            if (!data.cleaningProcessEndTime) missingFields.push("cleaningProcessEndTime");
+            if (!data.cleaningMethod) missingFields.push("cleaningMethod");
+            if (!data.ballastingStartTime) missingFields.push("ballastingStartTime");
+            if (!data.ballastingEndTime) missingFields.push("ballastingEndTime");
+            if (!data.chemicalsUsed) missingFields.push("chemicalsUsed");
+            if (!data.ballastingEndLatitude) missingFields.push("ballastingEndLatitude");
+            if (!data.ballastingEndLongitude) missingFields.push("ballastingEndLongitude");
+            if (!data.quantityBallastIfNotCleaned) missingFields.push("quantityBallastIfNotCleaned");
             if (missingFields.length > 0) {
                 return res.status(400).json({
                     message: `Missing required fields: ${missingFields.join(", ")}`
                 });
             }
 
-           
-           
             const success = await orb1Service.createRecord1(data, vesselID);
 
             if (success) {
                 res.status(201).json({
-                    message: "orb1 discharge record created successfully.",
+                    message: "Ballast water discharge record created successfully.",
                     operationType: 1
                 });
             } else {
-                res.status(500).json({ message: "Failed to create orb1 record." });
+                res.status(500).json({ message: "Failed to create ballast water record." });
             }
         } catch (err) {
             throw err;
@@ -99,7 +97,7 @@ async function createRecord(req, res) {
             if (!data.startPosition) missingFields.push("startPosition");
             if (!data.endPosition) missingFields.push("endPosition");
             if (!data.dischargeMethod) missingFields.push("dischargeMethod");
-            if (!data.quantityDischarged) missingFields.push("quantityDischarged");
+            if (data.quantityDischarged === undefined) missingFields.push("quantityDischarged");
             if (missingFields.length > 0) {
                 return res.status(400).json({
                     message: `Missing required fields: ${missingFields.join(", ")}`
@@ -111,7 +109,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "orb1 Discharge Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 2
                 });
@@ -133,8 +131,8 @@ async function createRecord(req, res) {
             let missingFields = [];
             // Validation for required fields
             if (!data.collectionTankIdentity) missingFields.push("collectionTankIdentity");
-            if (!data.collectionTankCapacity) missingFields.push("collectionTankCapacity");
-            if (!data.collectionTotalQuantityRetained) missingFields.push("collectionTotalQuantityRetained");
+            if (data.collectionTankCapacity === undefined) missingFields.push("collectionTankCapacity");
+            if (data.collectionTotalQuantityRetained === undefined) missingFields.push("collectionTotalQuantityRetained");
             if (!data.transferDisposalMethod) missingFields.push("transferDisposalMethod");
             if (missingFields.length > 0) {
                 return res.status(400).json({
@@ -147,7 +145,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "orb1 Discharge Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 3
                 });
@@ -179,20 +177,18 @@ async function createRecord(req, res) {
             }
 
             // Call service function to create the record
-            const result = await orb1Service.createRecord4(data, vesselID);
+            const success = await orb1Service.createRecord4(data, vesselID);
 
-            if (result.success) {
+            if (success) {
                 res.status(201).json({
                     message: "orb1 Discharge Facility record created successfully.",
-                    operationID: result.operationID,
                     operationType: 4
                 });
             } else {
                 res.status(500).json({ message: "Failed to create record." });
             }
         } catch (err) {
-            console.error("Error in createRecord2 controller:", err);
-            res.status(500).json({ message: "Internal Server Error", error: err.message });
+            throw err;
         }
     }
     async function createRecord5(req, res) {
@@ -237,7 +233,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "orb1 Discharge Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 5
                 });
@@ -271,7 +267,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "orb1 Discharge Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 6
                 });
@@ -293,11 +289,11 @@ async function createRecord(req, res) {
             if (!data.timeOfOccurrence) missingFields.push("timeOfOccurrence");
             if (!data.latitude) missingFields.push("latitude");
             if (!data.longitude) missingFields.push("longitude");
-            if (!data.quantityOfOil) missingFields.push("quantityOfOil");
+            if (data.quantityOfOil === undefined || data.quantityOfOil === null) missingFields.push("quantityOfOil");
             if (!data.typeOfOil) missingFields.push("typeOfOil");
             if (!data.circumstancesOfDischarge) missingFields.push("circumstancesOfDischarge");
             if (!data.actionsTaken) missingFields.push("actionsTaken");
-            
+
             // Validate numeric fields
             if (data.quantityOfOil !== undefined && data.quantityOfOil !== null && isNaN(parseFloat(data.quantityOfOil))) {
                 missingFields.push("quantityOfOil must be a valid number");
@@ -313,7 +309,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "orb1 Discharge Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 7
                 });
@@ -350,7 +346,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "orb1 Discharge Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 8
                 });
@@ -382,7 +378,7 @@ async function createRecord(req, res) {
 
             if (result.success) {
                 res.status(201).json({
-                    message: "orb1 Discharge Facility record created successfully.",
+                    message: "Ballast Water Discharge Facility record created successfully.",
                     operationID: result.operationID,
                     operationType: 9
                 });
@@ -404,4 +400,63 @@ async function fetchRecords(req, res) {
         res.status(500).json({ message: `Internal server error: ${err.message}` });
     }
 }
-export default { createRecord, fetchRecords };
+
+async function updateRecordVerificationStatus(req, res) {
+    try {
+
+        let data = req.body;
+
+
+        if (!data) {
+            return res.status(400).send({ message: "no inputs found" });
+        }
+
+        let recordId = data.recordId;
+        let verifiedBy = req.user.user_id;
+        let vesselId = req.user.vessel_id;
+        let operation = data.operation;
+        let remarks = data.remarks || null;
+
+
+        if (!recordId) {
+            return res.status(400).send({ message: "Record ID is required" });
+        }
+
+        if (!vesselId) {
+            return res.status(400).send({ message: "Vessel ID is required" });
+        }
+
+        if (!verifiedBy) {
+            return res.status(400).send({ message: "id of the verifier is missing" });
+        }
+
+        if (operation === null || operation === undefined || operation === '') {
+            return res.status(400).json({ message: "Operation type is is required" });
+        }
+
+
+        if (Number(operation) === 1) {
+            let verified = await orb1Service.setRecordVerified(recordId, verifiedBy, vesselId);
+
+            if (!verified) {
+                return res.status(500).send({ message: "can't verifiy the record" });
+            }
+
+            return res.status(200).json({ message: "Record verified" });
+        } else if (Number(operation) === 2) {
+            let rejected = await orb1Service.setRecordRejected(recordId, verifiedBy, vesselId, remarks);
+
+            if (!rejected) {
+                return res.status(500).send({ message: "verfication update failed", operation: "rejection" });
+            }
+
+        }
+
+        return res.status(200).json({ message: "verification status updated" });
+
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send({ message: err.message || "internal server error" });
+    }
+}
+export default { createRecord, fetchRecords, updateRecordVerificationStatus };

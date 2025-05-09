@@ -11,8 +11,6 @@ let pool;
         }
 })();
 
-
-
 async function processOperation(operationType, formData, user, vessel) {
     try {
         switch (operationType) {
@@ -84,137 +82,6 @@ async function processOperation(operationType, formData, user, vessel) {
     }
 }
 
-function flattenObject(obj, parent = "", res = {}) {
-  for (let key in obj) {
-    if (!obj.hasOwnProperty(key)) continue;
-
-    const value = obj[key];
-    const fullKey = parent ? `${parent}.${key}` : key;
-
-    if (Array.isArray(value)) {
-      value.forEach((item, index) => {
-        flattenObject(item, `${fullKey}[${index}]`, res);
-      });
-    } else if (typeof value === "object" && value !== null) {
-      flattenObject(value, fullKey, res);
-    } else {
-      res[fullKey] = value;
-    }
-  }
-  return res;
-}
-
-
-function prettifyKeys(obj) {
-  const newObj = {};
-
-  for (const key in obj) {
-    if (!obj.hasOwnProperty(key)) continue;
-
-    let prettyKey = key;
-
-    // Convert array-style keys like Tanks[0].TankIdentity
-    prettyKey = prettyKey.replace(/(\w+)\[(\d+)\]\.(\w+)/g, (_, arrayName, index, subKey) => {
-      return `${singularize(arrayName)} ${parseInt(index) + 1} - ${insertSpaces(subKey)}`;
-    });
-
-    // Convert nested keys like placeOfLoading → Place Of Loading
-    prettyKey = prettyKey
-      .replace(/([a-z])([A-Z])/g, "$1 $2") // camelCase to words
-      .replace(/^./, str => str.toUpperCase()); // Capitalize first letter
-
-    newObj[prettyKey] = obj[key];
-  }
-
-  return newObj;
-}
-
-
-function insertSpaces(str) {
-  return str.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, s => s.toUpperCase());
-}
-
-
-function singularize(word) {
-  if (word.endsWith('s')) return word.slice(0, -1);
-  return word;
-}
-
-
-function formatDates(obj) {
-  const isDate = (val) => /^\d{4}-\d{2}-\d{2}$/.test(val);
-  const isTime = (val) => /^\d{2}:\d{2}:\d{2}$/.test(val);
-  const isDateTime = (val) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?$/.test(val);
-
-  const timeOnlyKeys = [
-    "startTimeWashing",
-    "stopTimeWashing",
-    "startTime",
-    "stopTime",
-    "timeSystemOperational",
-    "timeOfSystemFailure",
-    "timeOfOccurrence",
-    "timeStart",
-    "timeCompletion",
-    "valveCloseTime",
-    "settlingLastResidues",
-    "settlingLastDischarge"
-   
-  ];
-
-  const dateOnlyKeys = [
-    "dateOfOperation",
-    "dateOfUnloading",
-    "dateOfTransfer",
-    "failureDate",
-    "occurrenceDate",
-    "operationDate"
-  ];
-
-  const dateTimeKeys = [
-    "StartTime",
-    "endTime",
-    "createdAt"
-    
-  ];
-
-  for (const key in obj) {
-    const val = obj[key];
-
-    if (val instanceof Date) {
-      if (timeOnlyKeys.includes(key)) {
-        obj[key] = val.toLocaleTimeString();
-      } else if (dateOnlyKeys.includes(key)) {
-        obj[key] = val.toLocaleDateString();
-      } else if (dateTimeKeys.includes(key)) {
-        obj[key] = val.toLocaleString();
-      }
-    } else if (typeof val === "string") {
-      if (isDateTime(val)) {
-        const date = new Date(val);
-        if (timeOnlyKeys.includes(key)) {
-          obj[key] = date.toLocaleTimeString();
-        } else if (dateOnlyKeys.includes(key)) {
-          obj[key] = date.toLocaleDateString();
-        } else if (dateTimeKeys.includes(key)) {
-          obj[key] = date.toLocaleString();
-        } else {
-          obj[key] = date.toLocaleString(); // Default fallback
-        }
-      } else if (isDate(val)) {
-        const date = new Date(val + "T00:00:00");
-        obj[key] = date.toLocaleDateString();
-      } else if (isTime(val)) {
-        const date = new Date("1970-01-01T" + val);
-        obj[key] = date.toLocaleTimeString();
-      }
-    }
-  }
-
-  return obj;
-}
-
-
 function renameKeys(obj, keyMap) {
   for (const oldKey in keyMap) {
     if (obj.hasOwnProperty(oldKey)) {
@@ -230,19 +97,21 @@ function renameKeys(obj, keyMap) {
       const result = await pool
         .request()
         .input("vesselID", sql.Int, vesselID)
-        .query(`
-          
-                SELECT 
+        .query(`SELECT 
     ods.*,
-    u.fullname AS createdby
+    creator.fullname AS createdby,
+    approver.fullname AS approvedBy,
+    verifier.fullname AS verifiedby
 FROM 
     tbl_orb_2 AS ods
-LEFT JOIN 
-    tbl_user AS u ON ods.createdby = u.user_id
+LEFT JOIN tbl_user AS creator ON creator.user_id = ods.createdBy
+LEFT JOIN tbl_user AS approver ON approver.user_id = ods.approvedby
+LEFT JOIN tbl_user AS verifier ON verifier.user_id = ods.verifiedBy
 WHERE 
     ods.vesselId = @vesselId
 ORDER BY 
     ods.createdAt DESC;
+
           `);
   
       const records = result.recordset;
@@ -267,24 +136,24 @@ ORDER BY
         
         
           const formattedTanks = tankRes.recordset.map(tank => {
-            const formattedTank = formatDates({ ...tank });
-            if (formattedTank.quantity !== undefined && formattedTank.quantity !== null) {
-              formattedTank.quantity = `${formattedTank.quantity} m³`;
+            
+            if (tank.quantity !== undefined && tank.quantity !== null) {
+              tank.quantity = `${tank.quantity} m³`;
             }
-            return formattedTank;
+            return tank;
           });
         
      
-          const formattedMainData = formatDates({ ...mainData });
+          
         
       
           const mergedData = {
-            ...formattedMainData,
+            ...mainData,
             tanks: formattedTanks,
           };
         
 
-          record.details = prettifyKeys(flattenObject(mergedData));
+          record.details = mergedData;
         
         }
         
@@ -293,7 +162,7 @@ ORDER BY
           const mainRes = await pool
             .request()
             .input("orb2Id", sql.Int, record.UnloadingOfOilCargo_id)
-            .query("SELECT operationId,placeOfUnloading,tankEmptied,quantityRetainedM3 AS quantityRetained FROM UnloadingOfOilCargo WHERE operationId = @orb2Id");
+            .query("SELECT operationId,createdAt,placeOfUnloading,tankEmptied,quantityRetainedM3 AS quantityRetained FROM UnloadingOfOilCargo WHERE operationId = @orb2Id");
           let mainData = mainRes.recordset[0];
         
         
@@ -316,11 +185,8 @@ ORDER BY
               tanks: enrichedTanks
             };
         
-            record.details = prettifyKeys(
-              flattenObject(
-                formatDates(result)
-              )
-            );
+            record.details =(result)
+              
           }
         }
          
@@ -363,7 +229,7 @@ ORDER BY
                 tanks: enrichedTanks,
               };
           
-              record.details = prettifyKeys(flattenObject(formatDates(result)));
+              record.details = result;
               
             }
           }
@@ -397,7 +263,7 @@ ORDER BY
                 tanks: enrichedTanks,
               };
           
-              record.details = prettifyKeys(flattenObject(formatDates(result)));
+              record.details = result;
             }
           }
           else if (record.LoadingBallastWater_id != null) {
@@ -411,17 +277,12 @@ ORDER BY
               .input("orb2Id", sql.Int,mainRes.recordset[0].operationId)
               .query(`SELECT tankIdentity AS tankName FROM LoadingBallastWaterTanks WHERE operationId = @orb2Id`);
             delete mainRes.recordset[0].operationId;
-            record.details = prettifyKeys(
-              flattenObject(
-                formatDates(
-                    {
+            record.details = {
                         
                         ...mainRes.recordset[0],
                         tanks: tankRes.recordset,
                       }
-                )
-              )
-            );
+            
           }
           
           else if (record.BallastWaterDischargeReception_id != null) {
@@ -430,38 +291,35 @@ ORDER BY
               .input("orb2Id", sql.Int, record.BallastWaterDischargeReception_id)
               .query(`SELECT * FROM BallastWaterDischargeReception WHERE operationId = @orb2Id`);
           delete mainRes.recordset[0].operationId;
-            record.details = prettifyKeys(
-              flattenObject(
-                formatDates(
-                    {
+            record.details ={
                         
                         ...mainRes.recordset[0],
-                      }
-                )
-              )
-            );
+                        }
+                
           }
           
           else if (record.CbtBallasting_id != null) {
             const mainRes = await pool
               .request()
               .input("orb2Id", sql.Int, record.CbtBallasting_id)
-              .query(`SELECT * FROM CbtBallasting WHERE operationId = @orb2Id`);
+              .query(`SELECT positionWhenAdditionalBallastWasTaken,positionWhenPortOrFlushWaterTakenToCBT, port, positionFlushed, oilyWaterQty, cleanBallastQty, valveTime, valvePosition FROM CbtBallasting WHERE operationId = @orb2Id`);
           
             const tankRes = await pool
               .request()
               .input("orb2Id", sql.Int, record.CbtBallasting_id)
-              .query(`SELECT * FROM CbtBallastingTanks WHERE operationId = @orb2Id`);
-          
-            record.details = prettifyKeys(
-              flattenObject(formatDates(
+              .query(`SELECT tankIdentity AS BallastedTank FROM CbtBallastingTanks WHERE operationId = @orb2Id`);
+          const sloptankres = await pool.request()
+          .input('operationId',sql.Int,record.CbtBallasting_id)
+          .query(`SELECT tankName AS OilywaterTransferredTank from SlopTankCbtBallasting WHERE operationId = @operationId`);
+
+            record.details = 
                 {
-                    operation: "CBT Ballasting",
+                    
                     ...mainRes.recordset[0],
                     tanks: tankRes.recordset,
+                    slopTanks:sloptankres.recordset
                   }
-              ))
-            );
+             
           }
           
           else if (record.CargoTankCleaning_id != null) {
@@ -472,36 +330,27 @@ ORDER BY
           
             let mainData = mainRes.recordset[0];
           
-            if (mainData.tankWashingTransferredTo === 'Reception Facilities') {
-              const twtRes = await pool
+            if (mainData.tanksWashingTransferredTo === 'Reception Facilities') {
+              const rfRes = await pool
                 .request()
-                .input('operationId', sql.Int, mainData.operationId)
-                .query(`
-                  SELECT * FROM ReceptionFacilities WHERE operationId = @operationId;
-                `);
+                .input("operationId", sql.Int, mainData.operationId)
+                .query("SELECT * FROM ReceptionFacilities WHERE operationId = @operationId");
           
-              const rf = twtRes.recordset.map(recepFac => ({
-                port: recepFac.port,
-                quantity: parseFloat(recepFac.quantity || 0).toFixed(2) + ' m³'
+              mainData.receptionFacilities = rfRes.recordset.map(rf => ({
+                port: rf.port,
+                quantity: parseFloat(rf.quantity || 0).toFixed(2) + ' m³'
               }));
-          
-              mainData.receptionFacilities = rf;
-            } 
-            else if (mainData.tankWashingTransferredTo === 'Slop/Cargo Tank(s)') {
+            } else {
               const slopRes = await pool
                 .request()
-                .input('operationId', sql.Int, mainData.operationId)
-                .query(`
-                  SELECT * FROM SlopCargoTanks WHERE operationId = @operationId;
-                `);
+                .input("operationId", sql.Int, mainData.operationId)
+                .query("SELECT * FROM SlopCargoTanks WHERE operationId = @operationId");
           
-              const st = slopRes.recordset.map(slopTank => ({
-                tankName: slopTank.tankName,
-                quantityTransferred: parseFloat(slopTank.quantityTransferred || 0).toFixed(2) + ' m³',
-                totalQuantity: parseFloat(slopTank.totalQuantity || 0).toFixed(2) + ' m³'
+              mainData.slopTanks = slopRes.recordset.map(slop => ({
+                tankName: slop.tankName,
+                quantityTransferred: parseFloat(slop.quantityTransferred || 0).toFixed(2) + ' m³',
+                totalQuantity: parseFloat(slop.totalQuantity || 0).toFixed(2) + ' m³'
               }));
-          
-              mainData.slopTanks = st;
             }
           
             const tankRes = await pool
@@ -509,67 +358,61 @@ ORDER BY
               .input("cargoTankCleaningId", sql.Int, mainData.operationId)
               .query("SELECT tankIdentity FROM CargoTankCleaningTanks WHERE operationId = @cargoTankCleaningId");
           
-            delete mainData.operationId; // OK to delete here after all fetching is done
+            delete mainData.operationId;
           
-            // ✨ Format final object manually
             const fullData = {
               ...mainData,
-              tanks: tankRes.recordset // keep tanks as array
+              tanks: tankRes.recordset
             };
           
-            record.details = prettifyKeys(
-              {
-                ...flattenObject(formatDates(fullData)),
-                ...(mainData.receptionFacilities ? { receptionFacilities: mainData.receptionFacilities } : {}),
-                ...(mainData.slopTanks ? { slopTanks: mainData.slopTanks } : {})
-              }
-            );
+            record.details = {
+              ...fullData,
+             
+            };
           
-            console.log(record.details);
+            
           }
           
-          
-  
         else if (record.DirtyBallastDischarge_id != null) {
           const mainRes = await pool
             .request()
             .input("orb2Id", sql.Int, record.DirtyBallastDischarge_id)
-            .query("SELECT * FROM DirtyBallastDischarge WHERE operationId = @orb2Id");
+            .query(`SELECT dischargeStartTime, dischargeStartPosition, dischargeCompleteTime, dischargeCompletePosition, 
+             shipSpeedKnots, quantityDischargedM3, monitoringSystem, regularCheckup, shorePort, shoreQuantityM3 FROM DirtyBallastDischarge WHERE operationId = @orb2Id`);
           const tankRes = await pool
             .request()
             .input("dirtyBallastDischargeId", sql.Int, record.DirtyBallastDischarge_id)
-            .query("SELECT * FROM DirtyBallastDischargeTanks WHERE operationId = @dirtyBallastDischargeId");
-  
-          record.details = prettifyKeys(
-            flattenObject(
-                formatDates(
+            .query("SELECT tankIdentity FROM DirtyBallastDischargeTanks WHERE operationId = @dirtyBallastDischargeId");
+            const SloptankRes = await pool
+            .request()
+            .input("dirtyBallastDischargeId", sql.Int, record.DirtyBallastDischarge_id)
+            .query("SELECT * FROM OilyWaterSlopTanks WHERE operationId = @dirtyBallastDischargeId");
+          
+          record.details = 
                     {
-                        operation: "Dirty Ballast Discharge",
+                       
                         ...mainRes.recordset[0],
                         tanks: tankRes.recordset,
+                        slopTanks:SloptankRes.recordset
                       }
-                )
-            )
-          );
+            
         }
   
         else if (record.SlopTankDischarge_id != null) {
           const mainRes = await pool
             .request()
             .input("orb2Id", sql.Int, record.SlopTankDischarge_id)
-            .query("SELECT * FROM SlopTankDischarge WHERE operationId = @orb2Id");
+            .query("SELECT settlingLastResidues, settlingLastDischarge, rateOfDischarge, ullageCompletion, valvesClosed FROM SlopTankDischarge WHERE operationId = @orb2Id");
           const tankRes = await pool
             .request()
             .input("slopTankDischargeId", sql.Int, record.SlopTankDischarge_id)
-            .query("SELECT * FROM SlopTankDischargeTanks WHERE operationId = @slopTankDischargeId");
+            .query("SELECT tankIdentity FROM SlopTankDischargeTanks WHERE operationId = @slopTankDischargeId");
   
-          record.details = prettifyKeys(
-            flattenObject(formatDates({
-              operation: "Slop Tank Discharge",
+          record.details = {
+              
               ...mainRes.recordset[0],
               tanks: tankRes.recordset,
-            })
-          ));
+            }
         }
   
         else if (record.CleanBallastDischarge_id != null) {
@@ -580,15 +423,13 @@ ORDER BY
           const tankRes = await pool
             .request()
             .input("cleanBallastDischargeId", sql.Int, record.CleanBallastDischarge_id)
-            .query("SELECT * FROM CleanBallastDischargeTanks WHERE operationId = @cleanBallastDischargeId");
-  
-          record.details = prettifyKeys(
-            flattenObject(formatDates({
-              operation: "Clean Ballast Discharge",
+            .query("SELECT tankIdentity FROM CleanBallastDischargeTanks WHERE operationId = @cleanBallastDischargeId");
+          delete mainRes.recordset[0].operationId;
+          record.details = {
+              
               ...mainRes.recordset[0],
               tanks: tankRes.recordset,
-            })
-          ));
+            }
         }
   
         else if (record.CbtBallastDischarge_id != null) {
@@ -599,15 +440,13 @@ ORDER BY
           const tankRes = await pool
             .request()
             .input("cbtBallastDischargeId", sql.Int, record.CbtBallastDischarge_id)
-            .query("SELECT * FROM CbtBallastDischargeTanks WHERE operationId = @cbtBallastDischargeId");
-  
-          record.details = prettifyKeys(
-            flattenObject(formatDates({
-              operation: "Dedicated Clean Ballast Discharge",
+            .query("SELECT tankIdentity FROM CbtBallastDischargeTanks WHERE operationId = @cbtBallastDischargeId");
+  delete mainRes.recordset[0].operationId;
+          record.details = {
+              
               ...mainRes.recordset[0],
               tanks: tankRes.recordset,
-            })
-          ));
+            }
         }
   
         else if (record.ResidueTransferDisposal_id != null) {
@@ -626,17 +465,21 @@ ORDER BY
           const result = await pool.request()
             .input("disposalId", sql.Int, disposalId)
             .query(`
-              SELECT * FROM DisposalMixedCargo WHERE operationId = @disposalId;
-              SELECT * FROM DisposalOtherMethod WHERE operationId = @disposalId;
-              SELECT * FROM DisposalReceptionFacility WHERE operationId = @disposalId;
-              SELECT * FROM DisposalTransferTanks WHERE operationId = @disposalId;
-              SELECT * FROM ResidueTransferDisposalTanks WHERE rtdId = @disposalId;
+              SELECT quantityMixed FROM DisposalMixedCargo WHERE operationId = @disposalId;
+              SELECT methodName,quantityDisposed FROM DisposalOtherMethod WHERE operationId = @disposalId;
+              SELECT portName,quantityInvolved FROM DisposalReceptionFacility WHERE operationId = @disposalId;
+              SELECT transferId, quantityTransferred AS quantityDisposed,totalQuantity FROM DisposalTransferTanks WHERE operationId = @disposalId;
+              SELECT tankName FROM ResidueTransferDisposalTanks WHERE rtdId = @disposalId;
             `);
-        
+              delete mainRes.recordset[0].operationId;
           const transferTanks = result.recordsets[3] || [];
           const disposalTanks = result.recordsets[4] || [];
-        
-          let tankIdentities = [];
+        const transferTanksModified = transferTanks.map(tank => ({
+          quantityTransferredbyThisMethod : tank.quantityDisposed + ' m3',
+          totalQuantity:tank.totalQuantity
+
+        }));
+          let tankIdentities ;
         
           if (transferTanks.length > 0) {
             for (const transfer of transferTanks) {
@@ -645,28 +488,24 @@ ORDER BY
                 .query(`
                   SELECT * FROM DisposalTransferTankList WHERE transferId = @transferId;
                 `);
-        
-              tankIdentities.push({
-                transferId: transfer.transferId,
-                tanks: tanksResult.recordset
-              });
+                    console.log("TankResult " , tanksResult.recordset);
+                   tankIdentities = tanksResult.recordset.map(item => item.tankIdentity); 
             }
           }
         
-          record.details = prettifyKeys(
-            flattenObject(formatDates({
-              operation: "Residue Transfer/Disposal",
+          
+        record.details = {
+              
               ...mainRes.recordset[0],
               mixedCargo: result.recordsets[0],
               otherMethod: result.recordsets[1],
               receptionFacility: result.recordsets[2],
-              transferTanks,
-              tanksIdentity: tankIdentities,
+              transferTanksModified,
+             tankIdentities,
               disposalTanks
-            }))
-          );
+            }
         
-          console.log(record);
+   
         }
         
         else if (record.CrudeOilWashing_id != null) {
@@ -678,10 +517,8 @@ ORDER BY
           const mainData = mainRes.recordset[0];
           mainData.washingPattern = Boolean(mainData.washingPattern);
           if (mainData) {
-            const formattedData = formatDates(mainData);
-            const flattenedData = flattenObject(formattedData);
-            const prettyData = prettifyKeys(flattenedData);
-            record.details = prettyData;
+            
+            record.details = mainData;
           }
         }
         
@@ -693,12 +530,10 @@ ORDER BY
             .input("orb2Id", sql.Int, record.AccidentalDischarge_id)
             .query("SELECT * FROM AccidentalDischarge WHERE operationId = @orb2Id");
           delete mainRes.recordset[0].operationId;
-          record.details = prettifyKeys(
-            flattenObject(formatDates({
-              operation: "Accidental Discharge",
+          record.details = {
+       
               ...mainRes.recordset[0],
-            })
-          ));
+            }
         }
   
         else if (record.ReallocationBallastWater_id != null) {
@@ -707,12 +542,10 @@ ORDER BY
             .input("orb2Id", sql.Int, record.ReallocationBallastWater_id)
             .query("SELECT * FROM ReallocationBallastWater WHERE operationId = @orb2Id");
           delete mainRes.recordset[0].operationId;
-          record.details = prettifyKeys(
-            flattenObject(formatDates({
+          record.details = {
              
               ...mainRes.recordset[0],
-            })
-          ));
+            }
         }
   
         else if (record.AdditionalProcedures_id != null) {
@@ -721,12 +554,10 @@ ORDER BY
             .input("orb2Id", sql.Int, record.AdditionalProcedures_id)
             .query("SELECT * FROM AdditionalProcedures WHERE operationId = @orb2Id");
   delete mainRes.recordset[0].operationId;
-          record.details = prettifyKeys(
-            flattenObject(formatDates({
+          record.details = {
               
               ...mainRes.recordset[0],
-            })
-          ));
+            }
         }
   
         else if (record.OilDischargeMonitoringSystem_id != null) {
@@ -735,12 +566,9 @@ ORDER BY
             .input("orb2Id", sql.Int, record.OilDischargeMonitoringSystem_id)
             .query("SELECT * FROM OilDischargeMonitoringSystem WHERE operationId = @orb2Id");
             delete mainRes.recordset[0].operationId;
-          record.details = prettifyKeys(
-            flattenObject(formatDates({
-              
+          record.details = {
               ...mainRes.recordset[0],
-            })
-          ));
+            }
         }
   
         else {
@@ -748,7 +576,7 @@ ORDER BY
         }
       }
       delete records.recordId;
-      
+     
       return records;
     } catch (err) {
       console.error(" Error in fetchOperation:", err);
@@ -790,31 +618,26 @@ async function insertReallocationBallastWater(recordName, data, user, vessel) {
             .query(insertQuery);
 
         const operationId = result.recordset[0].operationId;
-        const approvedby = 1;
-    const approvalStatus = 0;
+   
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verficationRemarks = `verified`;
+
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
-      .input('approvalStatus', sql.Int, approvalStatus)
+      
+      .input('approvalStatus', sql.Int, 0)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      
       .input('ReallocationBallastWater_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, verificationStatus,
           ReallocationBallastWater_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+           @approvalStatus, @createdBy, @vesselId, 
+          @verificationStatus, 
           @ReallocationBallastWater_id, @operationName
         )
       `);
@@ -894,31 +717,23 @@ async function insertBallastWaterDischargeTORF(recordName, data, user, vessel) {
             .query(insertQuery);
 
         const operationId = result.recordset[0].operationId;
-        const approvedby = 1;
-    const approvalStatus = 0;
-    const verificationStatus =0;
-    const verifiedBy= 2;
-    const verficationRemarks = `verified`;
+  
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
-      .input('approvalStatus', sql.Int, approvalStatus)
+      
+      .input('approvalStatus', sql.Int, 0)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
-      .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('verificationStatus', sql.Int, 0)
       .input('BallastWaterDischargeReception_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          approvalStatus, createdBy, vesselId,verificationStatus, 
           BallastWaterDischargeReception_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @approvalStatus, @createdBy, @vesselId, 
+          @verificationStatus, 
           @BallastWaterDischargeReception_id, @operationName
         )
       `);
@@ -993,31 +808,26 @@ async function insertLoadingBallastWater(recordName, data, user, vessel) {
             .query(insertDischargeQuery);
 
         const operationId = result.recordset[0].operationId;
-        const approvedby = 1;
+        
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verficationRemarks = `verified`;
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+      
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
       .input('LoadingBallastWater_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+            verificationStatus, 
           LoadingBallastWater_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+           @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus, 
           @LoadingBallastWater_id, @operationName
         )
       `);
@@ -1094,31 +904,26 @@ async function insertAdditionalProcedure(recordName, data, user, vessel) {
             .query(insertQuery);
 
         const operationId = result.recordset[0].operationId;
-        const approvedby = 1;
+        
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verficationRemarks = `verified`;
+  
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+     
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
       .input('AdditionalProcedures_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+       verificationStatus,
           AdditionalProcedures_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+           @approvalStatus, @createdBy, @vesselId,  @verificationStatus,
           @AdditionalProcedures_id, @operationName
         )
       `);
@@ -1245,31 +1050,26 @@ async function insertAccidentOtherDischarge(recordName, data, user, vessel) {
             .query(insertQuery);
 
         const operationId = result.recordset[0].operationId;
-        const approvedby = 1;
+       
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verficationRemarks = `verified`;
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+      
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
       .input('AccidentalDischarge_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+          verificationStatus, 
           AccidentalDischarge_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus, @verficationRemarks,
           @AccidentalDischarge_id, @operationName
         )
       `);
@@ -1349,31 +1149,27 @@ async function insertOilDischargeMonitoringSystem(recordName, data, user, vessel
             .query(insertQuery);
 
         const operationId = result.recordset[0].operationId;
-        const approvedby = 1;
+      
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verficationRemarks = `verified`;
+   
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+      
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
       .input('OilDischargeMonitoringSystem_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+           verificationStatus, 
           OilDischargeMonitoringSystem_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+           @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus,
           @OilDischargeMonitoringSystem_id, @operationName
         )
       `);
@@ -1494,31 +1290,26 @@ async function insertDischargeOfDedicatedCBT(recordName, data, user, vessel) {
             .query(insertQuery);
 
         const operationId = result.recordset[0].operationId;
-        const approvedby = 1;
+      
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verficationRemarks = `verified`;
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+      
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
-      .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
+      .input('verificationStatus', sql.Int, verificationStatus)     
       .input('CbtBallastDischarge_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+            verificationStatus, 
           CbtBallastDischarge_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+           @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus, 
           @CbtBallastDischarge_id, @operationName
         )
       `);
@@ -1610,31 +1401,26 @@ async function insertCleanBallastContainedInCargoTanks(recordName, data, user, v
 
         const operationId = result.recordset[0].operationId;
         console.log("Inserted CleanBallastDischarge with operationId:", operationId);
-        const approvedby = 1;
+        
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verficationRemarks = `verified`;
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+      
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
       .input('CleanBallastDischarge_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+        approvalStatus, createdBy, vesselId, 
+          verificationStatus, 
           CleanBallastDischarge_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @approvalStatus, @createdBy, @vesselId, 
+          @verificationStatus, 
           @CleanBallastDischarge_id, @operationName
         )
       `);
@@ -1708,31 +1494,27 @@ async function insertCTDR(recordName, data, user, vessel) {
             `);
       
         }
-            const approvedby = 1;
+         
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verficationRemarks = `verified`;
+
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+     
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
       .input('ResidueTransferDisposal_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+           verificationStatus, 
           ResidueTransferDisposal_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+           @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus, 
           @ResidueTransferDisposal_id, @operationName
         )
       `);
@@ -1931,31 +1713,26 @@ try {
 
         const operationId = result.recordset[0].operationId;
 
-        const approvedby = 1;
+        
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verficationRemarks = `verified`;
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+     
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
       .input('SlopTankDischarge_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          approvalStatus, createdBy, vesselId, 
+            verificationStatus, 
           SlopTankDischarge_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @approvalStatus, @createdBy, @vesselId, 
+         @verificationStatus,
           @SlopTankDischarge_id, @operationName
         )
       `);
@@ -2076,31 +1853,27 @@ async function insertDischargeOfDirtyBallast(recordName, data, user, vessel) {
 
         const operationId = result.recordset[0].operationId;
         console.log("Inserted DirtyBallastDischarge with Operation ID:", operationId);
-        const approvedby = 1;
+   
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verficationRemarks = `verified`;
+
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+      
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
       .input('DirtyBallastDischarge_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+          verificationStatus, 
           DirtyBallastDischarge_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verficationRemarks,
+          @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus, 
           @DirtyBallastDischarge_id, @operationName
         )
       `);
@@ -2227,30 +2000,27 @@ async function insertCleaningOfCargoTanks(recordName, data, user, vessel) {
 
         const operationId = result.recordset[0].operationId;
         console.log("CargoTankCleaning Operation ID created:", operationId);
-        const approvedby = 1;
+    
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verficationRemarks = `verified`;
+
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+     
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verficationRemarks', sql.NVarChar(255), verficationRemarks)
       .input('CargoTankCleaning_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+            verificationStatus, 
           CargoTankCleaning_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,  @verificationStatus, @verficationRemarks,
+           @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus, 
           @CargoTankCleaning_id, @operationName
         )
       `);
@@ -2408,30 +2178,27 @@ async function insertCleanBallastingTanks(recordName, data, user, vessel) {
             .query(query);
 
         const operationId = result.recordset[0].operationId;
-        const approvedby = 1;
+        
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verificationRemarks = `verified`;
+    
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+      
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verificationRemarks', sql.NVarChar(255), verificationRemarks)
       .input('CbtBallasting_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+            verificationStatus, 
           CbtBallasting_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,  @verificationStatus, @verificationRemarks,
+          @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus,
           @CbtBallasting_id, @operationName
         )
       `);
@@ -2541,31 +2308,28 @@ async function insertBallastingOfCargoTanks(recordName, data,user, vessel) {
             .query(query);
 
         const operationId = result.recordset[0].ballastingId;
-        const approvedby = 1;
+        
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verificationRemarks = `verified`;
+
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+      
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
       .input('verificationStatus', sql.Int, verificationStatus)
       .input('verifiedAt',sql.DateTime,new Date())
-      .input('verificationRemarks', sql.NVarChar(255), verificationRemarks)
       .input('Ballasting_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+          approvalStatus, createdBy, vesselId, 
+            verificationStatus, 
           Ballasting_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verificationRemarks,
+         @approvalStatus, @createdBy, @vesselId, 
+      @verificationStatus, 
           @Ballasting_id, @operationName
         )
       `);
@@ -2728,31 +2492,26 @@ async function insertCrudeOilWashingTanks(transaction, recordName, tanks, user, 
             .query(query);
 
     const operationId = results.recordset[0].operationId;
-    const approvedby = 1;
+    
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verificationRemarks = `verified`;
     const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+    
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedAt',sql.DateTime,new Date())
-      .input('verifiedBy', sql.Int, verifiedBy)
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verificationRemarks', sql.NVarChar(255), verificationRemarks)
       .input('CrudeOilWashing_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+            verificationStatus, 
           CrudeOilWashing_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verificationRemarks,
+           @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus, 
           @CrudeOilWashing_id, @operationName
         )
       `);
@@ -2772,11 +2531,9 @@ async function insertLoadingOilCargo(recordName, data,user,vessel) {
 
     const quantityAddedM3 = validateDecimal(data.quantityAdded);
     const totalContentOfTanksM3 = validateDecimal(data.totalContentOfTanks);
-    const approvedby = 1;
+    
     const approvalStatus = 0;
     const verificationStatus =0;
-    const verifiedBy= 2;
-    const verificationRemarks = `verified`;
     let transaction;
     try {
         
@@ -2785,6 +2542,8 @@ async function insertLoadingOilCargo(recordName, data,user,vessel) {
         console.log("Transaction started...");
 
         const query = `
+            
+            
             INSERT INTO LoadingOfOilCargo ( placeOfLoading, typeOfOilLoaded, quantityAddedM3, totalContentOfTanksM3) 
             VALUES ( @placeOfLoading, @typeOfOilLoaded, @quantityAddedM3, @totalContentOfTanksM3);
             SELECT SCOPE_IDENTITY() AS operationId;
@@ -2799,25 +2558,22 @@ async function insertLoadingOilCargo(recordName, data,user,vessel) {
 
         const operationId = result.recordset[0].operationId;
         const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+    
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verificationRemarks', sql.NVarChar(255), verificationRemarks)
       .input('LoadingOfOilCargo_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,  verificationStatus,verifiedAt, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+            verificationStatus,
           LoadingOfOilCargo_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,  @verificationStatus,@verifiedAt, @verificationRemarks,
+          @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus,
           @LoadingOfOilCargo_id, @operationName
         )
       `);
@@ -2854,7 +2610,8 @@ async function insertLoadingOilCargoTanks(transaction, operationId, tanks) {
     for (const tank of tanks) {
         const query = `
             INSERT INTO LoadingOfOilCargo_Tanks (operationId, tankIdentity, quantityLoadedM3) 
-            VALUES (@operationId, @tankIdentity, @quantityLoadedM3)
+            VALUES (@operationId, @tankIdentity, @quantityLoadedM3);
+            
         `;
 
         await transaction.request()
@@ -2881,11 +2638,9 @@ async function insertInternalTransfer(recordName, data,user,vessel) {
         const totalQuantityOfTanksM3 = validateDecimal(data.totalQuantityTanks);
         const quantityRetainedM3 = validateDecimal(data.quantityRetained);
         const quantityTransferred = validateDecimal(data.quantityTransferred);
-        const approvedby = 1;
+        
         const approvalStatus = 0;
         const verificationStatus =0;
-        const verifiedBy= 2;
-        const verificationRemarks = `verified`;
         // Start transaction
          
         transaction = new sql.Transaction(await pool); 
@@ -2910,25 +2665,22 @@ async function insertInternalTransfer(recordName, data,user,vessel) {
         const operationId = result.recordset[0].operationId;
 
         const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+      
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verificationRemarks', sql.NVarChar(255), verificationRemarks)
       .input('InternalTransferOfOilCargo_id', sql.Int, operationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+          verificationStatus, 
           InternalTransferOfOilCargo_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verificationRemarks,
+           @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus, 
           @InternalTransferOfOilCargo_id, @operationName
         )
       `);
@@ -3009,11 +2761,9 @@ async function insertUnloadingCargo(recordName, data,user,vessel) {
             return parseFloat(value.toFixed(scale));
         }
         const quantityRetainedUnloadM3 = validateDecimal(data.quantityRetainedUnload);
-        const approvedby = 1;
+        
         const approvalStatus = 0;
         const verificationStatus =0;
-        const verifiedBy= 2;
-        const verificationRemarks = `verified`;
         const result1 = await transaction.request()
             
             .input("placeOfUnloading", sql.NVarChar(150), data.placeOfUnloading)
@@ -3023,25 +2773,22 @@ async function insertUnloadingCargo(recordName, data,user,vessel) {
 
         const newOperationId = result1.recordset[0].newOperationId; // Get the inserted operationId
         const result2 = await transaction.request()
-      .input('approvedby', sql.Int, approvedby)
+      
       .input('approvalStatus', sql.Int, approvalStatus)
       .input('createdBy', sql.Int,user )
       .input('vesselId', sql.Int, vessel)
-      .input('verifiedBy', sql.Int, verifiedBy)
-      .input('verifiedAt', sql.DateTime, new Date())
       .input('verificationStatus', sql.Int, verificationStatus)
-      .input('verificationRemarks', sql.NVarChar(255), verificationRemarks)
       .input('UnloadingOfOilCargo_id', sql.Int, newOperationId)
       .input('operationName',sql.NVarChar(250),recordName)
       .query(`
         INSERT INTO tbl_orb_2 (
-          approvedby, approvalStatus, createdBy, vesselId, 
-          verifiedBy,verifiedAt,  verificationStatus, verificationRemarks,
+           approvalStatus, createdBy, vesselId, 
+          verificationStatus, 
           UnloadingOfOilCargo_id,operationName
         )
         VALUES (
-          @approvedby, @approvalStatus, @createdBy, @vesselId, 
-          @verifiedBy,@verifiedAt,  @verificationStatus, @verificationRemarks,
+           @approvalStatus, @createdBy, @vesselId, 
+            @verificationStatus, 
           @UnloadingOfOilCargo_id, @operationName
         )
       `);
@@ -3085,4 +2832,144 @@ async function insertUnloadingCargo(recordName, data,user,vessel) {
     }
 }
 
-export  { processOperation, fetchOperation }
+async function getAllUnverifiedRecords(vesselID){
+  try{
+
+      const request = pool.request();
+      request.input('vesselID',vesselID);
+
+      let query=`
+          select 'Oil Record Book PART-II' as recordName,t. *,u.fullname from tbl_orb_2 t
+                                                              left join tbl_user u on u.user_id=t.createdBy
+          where t.verificationStatus=0 and t.vesselID=@vesselID;
+      
+      `;
+
+      const result = await request.query(query);
+
+      if(result.recordset.length>0){
+          return result.recordset;
+      }
+
+      return [];
+
+  }catch(err){
+      console.log("ORB - II service : ",err);
+      throw new Error(`Database error: ${err.message}`);
+  }
+}
+
+async function setRecordVerified(recordId, verifiedBy, vesselID) {
+  try {
+      const request = pool.request();
+
+      const now = new Date();
+
+      request.input('recordID', recordId);
+      request.input('verifiedBy', verifiedBy);
+      request.input('verifiedAt', now);
+      request.input('status', 1);
+
+
+      const result = await request.query(`
+          UPDATE tbl_orb_2
+          SET verifiedBy=@verifiedBy, verifiedAt=@verifiedAt, verificationStatus=@status
+          WHERE recordID=@recordID;
+      `);
+
+
+      const auditRequest = pool.request();
+
+      auditRequest.input('recordID', recordId);
+      auditRequest.input('verifiedBy', verifiedBy);
+      auditRequest.input('verifiedAt', now);
+      auditRequest.input('vesselID', vesselID);
+      auditRequest.input('Operation', 'CE Verified');
+      auditRequest.input('recordBook', 'Oil Record Book Part- II');
+      auditRequest.input('remarks', 'ORB - II Record Verified');
+      auditRequest.input('status', 'Verified');
+
+
+      await auditRequest.query(`
+          INSERT INTO tbl_audit_log (CreatedAt, CreatedBy, VesselID, RecordBook, RecordID, Operation, Remarks, Status) 
+          VALUES (@verifiedAt, @verifiedBy, @vesselID, @recordBook, @recordID, @Operation, @remarks, @status);
+      `);
+
+      return !!(result.rowsAffected && result.rowsAffected[0] > 0);
+  } catch (err) {
+      console.error('Service error:', err);
+      throw new Error(`Database error: ${err.message}`);
+  }
+}
+
+async function setRecordRejected(recordId,verifiedBy, vesselID,remarks) {
+  try {
+      const request = pool.request();
+
+      const now = new Date();
+
+      request.input('recordID', recordId);
+      request.input('verifiedBy', verifiedBy);
+      request.input('verifiedAt', now);
+      request.input('status', 2);
+      request.input('remarks', remarks);
+
+      const result = await request.query(`
+          UPDATE tbl_orb_2
+          SET verifiedBy=@verifiedBy, verifiedAt=@verifiedAt, verificationStatus=@status
+          WHERE recordID=@recordID;
+      `);
+
+      const auditRequest = await pool.request();
+
+      auditRequest.input('recordID', recordId);
+      auditRequest.input('verifiedBy', verifiedBy);
+      auditRequest.input('verifiedAt', now);
+      auditRequest.input('vesselID', vesselID);
+      auditRequest.input('Operation', 'CE Verified');
+      auditRequest.input('recordBook', 'Oil Record Book Part - II');
+      auditRequest.input('remarks', remarks);
+      auditRequest.input('status', 'Rejected');
+
+
+      await auditRequest.query(`
+          INSERT INTO tbl_audit_log (CreatedAt, CreatedBy, VesselID, RecordBook, RecordID, Operation, Remarks, Status) 
+          VALUES (@verifiedAt, @verifiedBy, @vesselID, @recordBook, @recordID, @Operation, @remarks, @status);
+      `);
+
+      return !!(result.rowsAffected && result.rowsAffected[0] > 0);
+
+  } catch (err) {
+
+      console.error('Service error:', err);
+      throw new Error(`Database error: ${err.message}`);
+
+  }
+}
+
+
+async function getVerifiedRecordsForUser(userId,vesselID) {
+    try{
+
+        let request=await pool.request();
+
+        request.input('ID',userId);
+        request.input('vesselID',vesselID);
+
+        let query=`select * from tbl_orb_2 where verificationStatus=1 and verifiedBy=@ID and vesselID=@vesselID;`;
+
+        const result = await request.query(query);
+
+        if(result.recordset.length>0){
+            return result.recordset;
+        }
+
+        return [];
+
+    }catch(err){
+        console.error('Service error:', err);
+        throw new Error(`Database error: ${err.message}`);
+    }
+}
+
+export  {getVerifiedRecordsForUser, processOperation, fetchOperation,getAllUnverifiedRecords,setRecordRejected,setRecordVerified }

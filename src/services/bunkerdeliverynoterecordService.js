@@ -19,35 +19,37 @@ async function getAllRecords(vesselID) {
     request.input('vesselId',vesselID);
     
     let query=`
-            select
-                
-                s.approvedby,
-                s.approvalStatus,
-                s.portOfBunkering,
-                s.deliveryDate,
-                s.supplierName,
-                s.supplierAddress,
-                s.createdAt,
-                s.supplierTelephone,
-                s.productName,
-                s.quantityDeliveredMT,
-                s.densityAt15C,
-                s.sulfurContentPercent,
-                s.supplierDeclarationFile,
-                s.verifiedAt,
-                s.verficationRemarks,
-                s.verificationStatus,
-                s.verifiedBy,
-                u.fullname as createdBy
-            from tbl_bunkerDelivery s
-            left join tbl_user u on u.user_id=s.createdBy
-            where vesselId=@vesselID;
+
+            SELECT
+   
+    s.approvedby,
+    s.approvalStatus,
+    s.portOfBunkering,
+    s.deliveryDate,
+    s.supplierName,
+    s.supplierAddress,
+    s.createdAt,
+    s.supplierTelephone,
+    s.productName,
+    s.quantityDeliveredMT,
+    s.densityAt15C,
+    s.sulfurContentPercent,
+    s.verifiedBy,
+    s.verifiedAt,
+    s.verficationRemarks,
+    s.verificationStatus,
+    creator.fullname AS createdBy
+FROM tbl_bunkerDelivery s
+LEFT JOIN tbl_user creator ON creator.user_id = s.createdBy
+
+WHERE s.vesselId = @vesselID;     
         `;
 try{
         const result = await request.query(query);
-
+        
         if(result.recordset.length>0){
             return result.recordset;
+            
         }
 
         return [];
@@ -96,11 +98,9 @@ async function createRecords(data, vesselID) {
         }
 
         const request = await pool.request();
-        request.input("verificationRemarks", sql.NVarChar(50), "verified")
-    .input("verifiedAt", sql.DateTime, new Date())
+        request
+    
     .input("verificationStatus", sql.Int, 0)
-    .input("verifiedBy", sql.Int, 2)
-    .input("approvedBy", sql.Int, 1)
     .input("approvalStatus", sql.Int, 0)
     .input("createdBy", sql.Int, data.createdBy)
     .input("vesselId", sql.Int, vesselID)
@@ -118,12 +118,13 @@ async function createRecords(data, vesselID) {
 
 
         const query = `
+        
             INSERT INTO tbl_bunkerDelivery 
-            (verficationRemarks,verifiedAt,verificationStatus,verifiedBy,approvedby, approvalStatus, createdBy, vesselId, portOfBunkering, deliveryDate, 
+            (verificationStatus, approvalStatus, createdBy, vesselId, portOfBunkering, deliveryDate, 
              supplierName, supplierAddress, supplierTelephone, productName, quantityDeliveredMT, 
              densityAt15C, sulfurContentPercent, supplierDeclarationFile, createdAt)
             VALUES 
-            (@verificationRemarks,@verifiedAt,@verificationStatus,@verifiedBy,@approvedBy,@approvalStatus, @createdBy, @vesselId, @portOfBunkering, @deliveryDate, 
+            (@verificationStatus,@approvalStatus, @createdBy, @vesselId, @portOfBunkering, @deliveryDate, 
              @supplierName, @supplierAddress, @supplierTelephone, @productName, @quantityDeliveredMT, 
              @densityAt15C, @sulfurContentPercent, @supplierDeclarationFile, @createdAt);
         `;
@@ -154,5 +155,164 @@ async function createRecords(data, vesselID) {
     }
 }
 
+async function getPdf(id)
+{
+    try{
+        const res = await pool.request()
+        .input('id',sql.Int,id)
+        .query(`
+            SELECT supplierDeclarationFile FROM tbl_bunkerDelivery WHERE recordId = @id; 
+            `) ;
 
-export default { getAllRecords,createRecords }
+        if(res.recordset.length > 0)
+        {
+            return res.recordset;
+        }
+        return [];
+    }
+    catch (err){
+        console.log(err.message);
+        throw new Error('PDF not received ',err.message);
+    }
+}
+
+async function getAllUnverifiedRecords(vesselID){
+    try{
+
+        const request = pool.request();
+        request.input('vesselID',vesselID);
+
+        let query=`
+            select 'Bunker Delivery Record Book' as recordName,t. *,u.fullname from tbl_bunkerDelivery t
+                                                                left join tbl_user u on u.user_id=t.createdBy
+            where t.verificationStatus=0 and t.vesselID=@vesselID;
+        
+        `;
+
+        const result = await request.query(query);
+
+        if(result.recordset.length>0){
+            return result.recordset;
+        }
+
+        return [];
+
+    }catch(err){
+        console.log("BDN service : ",err);
+        throw new Error(`Database error: ${err.message}`);
+    }
+}
+
+async function setRecordVerified(recordId, verifiedBy, vesselID) {
+    try {
+        const request = pool.request();
+
+        const now = new Date();
+
+        request.input('recordID', recordId);
+        request.input('verifiedBy', verifiedBy);
+        request.input('verifiedAt', now);
+        request.input('status', 1);
+
+
+        const result = await request.query(`
+            UPDATE tbl_bunkerDelivery
+            SET verifiedBy=@verifiedBy, verifiedAt=@verifiedAt, verificationStatus=@status
+            WHERE recordID=@recordID;
+        `);
+
+
+        const auditRequest = pool.request();
+
+        auditRequest.input('recordID', recordId);
+        auditRequest.input('verifiedBy', verifiedBy);
+        auditRequest.input('verifiedAt', now);
+        auditRequest.input('vesselID', vesselID);
+        auditRequest.input('Operation', 'CE Verified');
+        auditRequest.input('recordBook', 'Bunker Delivery Record Book');
+        auditRequest.input('remarks', 'Bunker Delivery Record Verified');
+        auditRequest.input('status', 'Verified');
+
+
+        await auditRequest.query(`
+            INSERT INTO tbl_audit_log (CreatedAt, CreatedBy, VesselID, RecordBook, RecordID, Operation, Remarks, Status) 
+            VALUES (@verifiedAt, @verifiedBy, @vesselID, @recordBook, @recordID, @Operation, @remarks, @status);
+        `);
+
+        return !!(result.rowsAffected && result.rowsAffected[0] > 0);
+    } catch (err) {
+        console.error('Service error:', err);
+        throw new Error(`Database error: ${err.message}`);
+    }
+}
+
+async function setRecordRejected(recordId,verifiedBy, vesselID,remarks) {
+    try {
+        const request = pool.request();
+
+        const now = new Date();
+
+        request.input('recordID', recordId);
+        request.input('verifiedBy', verifiedBy);
+        request.input('verifiedAt', now);
+        request.input('status', 2);
+        request.input('remarks', remarks);
+
+        const result = await request.query(`
+            UPDATE tbl_bunkerDelivery
+            SET verifiedBy=@verifiedBy, verifiedAt=@verifiedAt, verificationStatus=@status
+            WHERE recordID=@recordID;
+        `);
+
+        const auditRequest = await pool.request();
+
+        auditRequest.input('recordID', recordId);
+        auditRequest.input('verifiedBy', verifiedBy);
+        auditRequest.input('verifiedAt', now);
+        auditRequest.input('vesselID', vesselID);
+        auditRequest.input('Operation', 'CE Verified');
+        auditRequest.input('recordBook', 'Bunker Delivery Record Book');
+        auditRequest.input('remarks', remarks);
+        auditRequest.input('status', 'Rejected');
+
+
+        await auditRequest.query(`
+            INSERT INTO tbl_audit_log (CreatedAt, CreatedBy, VesselID, RecordBook, RecordID, Operation, Remarks, Status) 
+            VALUES (@verifiedAt, @verifiedBy, @vesselID, @recordBook, @recordID, @Operation, @remarks, @status);
+        `);
+
+        return !!(result.rowsAffected && result.rowsAffected[0] > 0);
+
+    } catch (err) {
+
+        console.error('Service error:', err);
+        throw new Error(`Database error: ${err.message}`);
+
+    }
+}
+
+async function getVerifiedRecordsForUser(userId,vesselID) {
+    try{
+
+        let request=await pool.request();
+
+        request.input('ID',userId);
+        request.input('vesselID',vesselID);
+
+        let query=`select * from tbl_bunkerDelivery where verificationStatus=1 and verifiedBy=@ID and vesselID=@vesselID;`;
+
+        const result = await request.query(query);
+
+        if(result.recordset.length>0){
+            return result.recordset;
+        }
+
+        return [];
+
+    }catch(err){
+        console.error('Service error:', err);
+        throw new Error(`Database error: ${err.message}`);
+    }
+}
+
+export default { getAllRecords,createRecords,getPdf,getVerifiedRecordsForUser,getAllUnverifiedRecords,setRecordRejected,setRecordVerified }

@@ -3,4 +3,6 @@ import bwrController from '../controllers/bwrController.js';
 const bwrRouter = express.Router();
 bwrRouter.post('/',bwrController.createRecord);
 bwrRouter.get('/all',bwrController.fetchRecords);
+bwrRouter.post('/verify',bwrController.updateRecordVerificationStatus);
+
 export default bwrRouter;

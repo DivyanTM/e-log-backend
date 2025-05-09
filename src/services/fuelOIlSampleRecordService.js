@@ -210,4 +210,28 @@ async function setRecordRejected(recordId,verifiedBy, vesselID,remarks) {
     }
 }
 
-export default { createRecord,getAllRecords,getAllUnverifiedRecords,setRecordRejected,setRecordVerified };
+async function getVerifiedRecordsForUser(userId,vesselID) {
+    try{
+
+        let request=await pool.request();
+
+        request.input('ID',userId);
+        request.input('vesselID',vesselID);
+
+        let query=`select * from tbl_fuel_oil_sample_record where verificationStatus=1 and verifiedBy=@ID and vesselID=@vesselID;`;
+
+        const result = await request.query(query);
+
+        if(result.recordset.length>0){
+            return result.recordset;
+        }
+
+        return [];
+
+    }catch(err){
+        console.error('Service error:', err);
+        throw new Error(`Database error: ${err.message}`);
+    }
+}
+
+export default {getVerifiedRecordsForUser, createRecord,getAllRecords,getAllUnverifiedRecords,setRecordRejected,setRecordVerified };

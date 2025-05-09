@@ -5,6 +5,7 @@ const bdnRouter = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 bdnRouter.get('/all',bunkerdeliverynoterecordController.getAllRecord);
+bdnRouter.get('/download/:id',bunkerdeliverynoterecordController.downloadPdf);
 bdnRouter.post('/',upload.single('supplierDeclaration'),bunkerdeliverynoterecordController.createRecord);
 
 export default bdnRouter;
